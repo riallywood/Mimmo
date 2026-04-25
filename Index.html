@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MiMMo — Sorteggio Fermate</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0d0d0d; }
+    button:active { filter: brightness(0.9); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+
+
+const FERMATE = {
+  M1: {
+    colore: "#e2001a", nome: "M1 Rossa",
+    stazioni: [
+      "Sesto 1° Maggio FS","Sesto Marelli","Sesto Rondò","Villa S. Giovanni",
+      "Precotto","Turro","Gorla","Pasteur","Rovereto","Loreto","Lima",
+      "Porta Venezia","Palestro","San Babila","Duomo","Cordusio","Cairoli",
+      "Cadorna FN","Conciliazione","Pagano","Wagner","De Angeli","Gambara",
+      "Bande Nere","Primaticcio","Inganni","Bisceglie","San Leonardo","Uruguay",
+      "Bonola","Lampugnano","QT8","Amendola","Lotto","Molino Dorino","Pero",
+      "Rho Fieramilano","Buonarroti"
+    ]
+  },
+  M2: {
+    colore: "#008a32", nome: "M2 Verde",
+    stazioni: [
+      "Gessate","Cascina Antonietta","Villa Pompea","Villa Fiorita","Bussero",
+      "Cassina de' Pecchi","Cernusco sul Naviglio","Vimodrone","Cascina Burrona",
+      "Cascina Gobba","Cologno Nord","Cologno Centro","Cologno Sud","Crescenzago",
+      "Cimiano","Udine","Lambrate FS","Piola","Loreto","Caiazzo","Centrale FS",
+      "Gioia","Garibaldi FS","Moscova","Lanza","Cadorna FN","Sant'Ambrogio",
+      "S. Agostino","Porta Genova FS","Romolo","Famagosta",
+      "Assago Milanofiori Nord","Assago Milanofiori Forum","Abbiategrasso"
+    ]
+  },
+  M3: {
+    colore: "#f7a800", nome: "M3 Gialla",
+    stazioni: [
+      "Comasina","Affori FN","Affori Centro","Dergano","Maciachini","Zara",
+      "Sondrio","Centrale FS","Repubblica","Turati","Montenapoleone","Duomo",
+      "Missori","Crocetta","Porta Romana","Lodi T.I.B.B.","Brenta","Corvetto",
+      "Porto di Mare","Rogoredo FS","San Donato"
+    ]
+  },
+  M4: {
+    colore: "#005b9a", nome: "M4 Blu",
+    stazioni: [
+      "Linate Aeroporto","Repetti","Forlanini FS","Argonne","Susa","Dateo",
+      "Tricolore","San Babila","Sforza Policlinico","Santa Sofia","Vetra",
+      "De Amicis","Sant'Ambrogio","Coni Zugna","California","Bolivar",
+      "Tolstoj","Frattini","Gelsomini","Segneri","San Cristoforo FS"
+    ]
+  },
+  M5: {
+    colore: "#82368c", nome: "M5 Lilla",
+    stazioni: [
+      "Bignami","Tonale","Bicocca","Ca' Granda","Istria","Marche","Zara",
+      "Isola","Garibaldi FS","Monumentale","Cenisio","Gerusalemme",
+      "Domodossola FN","Tre Torri","Portello","Lotto","Segesta",
+      "San Siro Ippodromo","San Siro Stadio"
+    ]
+  }
+};
+
+const TUTTE = Object.entries(FERMATE).flatMap(([linea, data]) =>
+  data.stazioni.map(s => ({ nome: s, linea, colore: data.colore, nomeLinea: data.nome }))
+);
+
+const MAX_PASSI = 2;
+
+function App() {
+  const [fermata, setFermata] = useState(null);
+  const [storia, setStoria] = useState([]);
+  const [animating, setAnimating] = useState(false);
+  const [filtroLinea, setFiltroLinea] = useState("TUTTE");
+  const [usate, setUsate] = useState([]);
+  const [fase, setFase] = useState("sorteggio");
+  const [passiUsati, setPassiUsati] = useState(0);
+
+  const filtrate = filtroLinea === "TUTTE" ? TUTTE : TUTTE.filter(f => f.linea === filtroLinea);
+  const daEstrarre = filtrate.filter(f => !usate.some(u => u.nome === f.nome && u.linea === f.linea));
+  const pick = pool => pool[Math.floor(Math.random() * pool.length)];
+
+  const sorteggia = () => {
+    if (animating) return;
+    let pool = daEstrarre.length ? daEstrarre : filtrate;
+    if (!daEstrarre.length) setUsate([]);
+    setAnimating(true);
+    setTimeout(() => {
+      setFermata(pick(pool));
+      setAnimating(false);
+      setFase(passiUsati >= MAX_PASSI ? "obbligato" : "scelta");
+    }, 400);
+  };
+
+  const mimo = () => {
+    setUsate(p => [...p, fermata]);
+    setStoria(p => [fermata, ...p].slice(0, 8));
+    setPassiUsati(0); setFase("sorteggio"); setFermata(null);
+  };
+
+  const passo = () => {
+    const np = passiUsati + 1; setPassiUsati(np);
+    let pool = daEstrarre.filter(f => !(f.nome === fermata.nome && f.linea === fermata.linea));
+    if (!pool.length) pool = filtrate;
+    setAnimating(true);
+    setTimeout(() => {
+      setFermata(pick(pool)); setAnimating(false);
+      setFase(np >= MAX_PASSI ? "obbligato" : "scelta");
+    }, 400);
+  };
+
+  const nuovoTurno = () => { setFermata(null); setFase("sorteggio"); setPassiUsati(0); };
+  const reset = () => { setUsate([]); setFermata(null); setStoria([]); setFase("sorteggio"); setPassiUsati(0); };
+
+  const isM3 = fermata?.linea === "M3";
+
+  return (
+    <div style={{ minHeight:"100vh", background:"#0d0d0d", fontFamily:"'Helvetica Neue',Arial,sans-serif",
+      display:"flex", flexDirection:"column", alignItems:"center", padding:"0 16px 40px" }}>
+
+      <div style={{ position:"fixed", inset:0, zIndex:0,
+        backgroundImage:"linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)",
+        backgroundSize:"40px 40px" }}/>
+
+      {/* Header */}
+      <div style={{ position:"relative", zIndex:1, textAlign:"center", paddingTop:24, marginBottom:8 }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}>
+          {["M","i","M","M","o"].map((ch, i) => (
+            <span key={i} style={{
+              fontSize: ch === "i" || ch === "o" ? 28 : 42,
+              fontWeight:900, color: "#e2001a",
+              fontFamily:"Impact, Arial Black, sans-serif",
+              letterSpacing: -1, lineHeight:1
+            }}>{ch}</span>
+          ))}
+        </div>
+        <p style={{ color:"#555", fontSize:"0.72rem", margin:"6px 0 0",
+          letterSpacing:"0.3em", fontFamily:"monospace", textTransform:"uppercase" }}>
+          Sorteggio Fermate — Metropolitana di Milano
+        </p>
+      </div>
+
+      {/* Filtro linee */}
+      <div style={{ position:"relative", zIndex:1, display:"flex", gap:6,
+        flexWrap:"wrap", justifyContent:"center", margin:"16px 0 20px" }}>
+        {["TUTTE","M1","M2","M3","M4","M5"].map(k => {
+          const active = filtroLinea === k;
+          const col = k === "TUTTE" ? "#fff" : FERMATE[k]?.colore;
+          const textCol = active
+            ? (k === "TUTTE" ? "#000" : k === "M3" ? "#000" : "#fff")
+            : "#aaa";
+          return (
+            <button key={k} onClick={() => { setFiltroLinea(k); setFermata(null); setFase("sorteggio"); setPassiUsati(0); }} style={{
+              padding:"5px 13px", borderRadius:4,
+              border:`2px solid ${active ? col : "rgba(255,255,255,0.15)"}`,
+              background: active ? col : "transparent",
+              color: textCol,
+              fontFamily:"inherit", fontSize:"0.85rem", letterSpacing:"0.05em",
+              fontWeight: active ? 700 : 400,
+              cursor:"pointer", transition:"all 0.2s",
+              boxShadow: active ? `0 0 10px ${col}55` : "none"
+            }}>
+              {k === "TUTTE" ? "Tutte" : `${k} — ${FERMATE[k].nome.split(" ").slice(1).join(" ")}`}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Card principale */}
+      <div style={{
+        position:"relative", zIndex:1, width:"100%", maxWidth:520,
+        background:"#161616",
+        border:`1px solid ${fase==="obbligato" ? "rgba(226,0,26,0.5)" : "rgba(255,255,255,0.08)"}`,
+        borderRadius:16, padding:"28px 22px", textAlign:"center",
+        boxShadow: fermata ? `0 0 60px ${fermata.colore}22` : "0 8px 40px rgba(0,0,0,0.6)",
+        transition:"all 0.4s"
+      }}>
+
+        {/* Indicatore passi */}
+        {fase !== "sorteggio" && (
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, marginBottom:18 }}>
+            {[0,1].map(i => (
+              <div key={i} style={{ width:34, height:6, borderRadius:3,
+                background: i < passiUsati ? "#444" : "rgba(255,255,255,0.12)", transition:"all 0.3s" }}/>
+            ))}
+            <span style={{ color: fase==="obbligato"?"#e2001a":"#555",
+              fontFamily:"monospace", fontSize:"0.68rem", marginLeft:6, letterSpacing:"0.1em" }}>
+              {fase==="obbligato" ? "⚠ OBBLIGATO A MIMARE" : `PASSO ${passiUsati}/${MAX_PASSI}`}
+            </span>
+          </div>
+        )}
+
+        {/* Fermata estratta */}
+        <div style={{ minHeight:150, display:"flex", flexDirection:"column",
+          alignItems:"center", justifyContent:"center" }}>
+          {fermata ? (
+            <div style={{ opacity:animating?0:1, transform:animating?"scale(0.9)":"scale(1)", transition:"all 0.3s" }}>
+              <div style={{
+                display:"inline-block", background:fermata.colore,
+                color:isM3?"#000":"#fff",
+                fontSize:"0.85rem", letterSpacing:"0.2em", fontWeight:700,
+                padding:"4px 12px", borderRadius:4, marginBottom:14,
+                boxShadow:`0 4px 18px ${fermata.colore}66`
+              }}>{fermata.nomeLinea}</div>
+              <div style={{
+                color:"#fff", fontSize:"clamp(1.9rem,8vw,3.2rem)",
+                fontWeight:900, letterSpacing:"0.02em", lineHeight:1.1,
+                textShadow:`0 0 28px ${fermata.colore}88`
+              }}>{fermata.nome}</div>
+            </div>
+          ) : (
+            <div style={{ color:"#444", fontSize:"0.9rem", letterSpacing:"0.2em", fontFamily:"monospace" }}>
+              — premi il tasto per sorteggiare —
+            </div>
+          )}
+        </div>
+
+        {/* Contatore */}
+        <div style={{ color:"#555", fontFamily:"monospace", fontSize:"0.72rem", marginTop:10, letterSpacing:"0.1em" }}>
+          {(() => {
+            const usateInFiltrate = filtrate.filter(f => usate.some(u => u.nome === f.nome && u.linea === f.linea)).length;
+            const rimaste = filtrate.length - usateInFiltrate;
+            return usateInFiltrate > 0
+              ? `${rimaste} rimaste · ${usateInFiltrate} già mimate`
+              : `${filtrate.length} fermate disponibili`;
+          })()}
+        </div>
+
+        {/* Bottoni azione */}
+        <div style={{ marginTop:24 }}>
+          {fase === "sorteggio" && (
+            <button onClick={sorteggia} disabled={animating} style={{
+              width:"100%", padding:"17px 20px", background:"#e2001a",
+              border:"none", borderRadius:8, color:"#fff",
+              fontFamily:"inherit", fontSize:"1.4rem", fontWeight:900, letterSpacing:"0.2em",
+              cursor:animating?"not-allowed":"pointer",
+              boxShadow:"0 6px 28px #e2001a55",
+              transform:animating?"scale(0.97)":"scale(1)", transition:"all 0.15s",
+              opacity:animating?0.7:1
+            }}>Sorteggia!</button>
+          )}
+          {(fase==="scelta"||fase==="obbligato") && !animating && (
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={mimo} style={{
+                flex:2, padding:"17px 10px",
+                background:fermata?.colore||"#e2001a",
+                border:"none", borderRadius:8,
+                color:isM3?"#000":"#fff",
+                fontFamily:"inherit", fontSize:"1.3rem", fontWeight:900, letterSpacing:"0.1em",
+                cursor:"pointer",
+                boxShadow:`0 6px 22px ${fermata?.colore||"#e2001a"}55`, transition:"all 0.15s"
+              }}>🎭 Mimo!</button>
+              {fase !== "obbligato" && (
+                <button onClick={passo} style={{
+                  flex:1, padding:"17px 10px", background:"transparent",
+                  border:"2px solid #333", borderRadius:8, color:"#666",
+                  fontFamily:"inherit", fontSize:"1.3rem", fontWeight:700, letterSpacing:"0.1em",
+                  cursor:"pointer", transition:"all 0.15s"
+                }}>Passo</button>
+              )}
+            </div>
+          )}
+          {fase==="obbligato" && !animating && (
+            <p style={{ color:"#e2001a", fontFamily:"monospace", fontSize:"0.7rem",
+              marginTop:10, letterSpacing:"0.08em" }}>
+              Hai già passato 2 volte — devi mimare questa fermata!
+            </p>
+          )}
+        </div>
+
+        {/* Bottoni secondari */}
+        <div style={{ marginTop:12, display:"flex", gap:8, justifyContent:"center" }}>
+          {fase !== "sorteggio" && (
+            <button onClick={nuovoTurno} style={{ background:"none", border:"1px solid #2a2a2a",
+              borderRadius:6, color:"#555", fontFamily:"monospace", fontSize:"0.7rem",
+              padding:"6px 13px", cursor:"pointer", letterSpacing:"0.08em" }}>
+              ↩ nuovo turno
+            </button>
+          )}
+          {storia.length > 0 && (
+            <button onClick={reset} style={{ background:"none", border:"1px solid #2a2a2a",
+              borderRadius:6, color:"#555", fontFamily:"monospace", fontSize:"0.7rem",
+              padding:"6px 13px", cursor:"pointer", letterSpacing:"0.08em" }}>
+              ↺ reset partita
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Storico fermate */}
+      {storia.length > 0 && (
+        <div style={{ position:"relative", zIndex:1, width:"100%", maxWidth:520, marginTop:18 }}>
+          <p style={{ color:"#444", fontFamily:"monospace", fontSize:"0.68rem",
+            letterSpacing:"0.2em", textAlign:"center", marginBottom:8 }}>FERMATE MIMATE</p>
+          {storia.map((f,i) => (
+            <div key={i} style={{
+              display:"flex", alignItems:"center", gap:12,
+              background:"#111", border:"1px solid #222", borderRadius:6,
+              padding:"8px 14px", marginBottom:5, opacity:1-i*0.1
+            }}>
+              <div style={{ width:8, height:8, borderRadius:"50%", background:f.colore, flexShrink:0 }}/>
+              <span style={{ color:"#555", fontFamily:"monospace", fontSize:"0.68rem", flexShrink:0 }}>{f.linea}</span>
+              <span style={{ color:"#888", fontFamily:"inherit", fontSize:"0.9rem" }}>{f.nome}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
