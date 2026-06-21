@@ -199,6 +199,9 @@ function GameScreen({ cittaKey, onBack }) {
   const [usate, setUsate] = useState([]);
   const [fase, setFase] = useState("sorteggio");
   const [passiUsati, setPassiUsati] = useState(0);
+  const [dadoRisultato, setDadoRisultato] = useState(null);
+  const [dadoAnimating, setDadoAnimating] = useState(false);
+  const [dadoFacce, setDadoFacce] = useState(1);
 
   const filtrate = filtroLinea === "TUTTE"
     ? TUTTE
@@ -224,8 +227,28 @@ function GameScreen({ cittaKey, onBack }) {
   const mimo = () => {
     setUsate(p => [...p, fermata]);
     setStoria(p => [fermata, ...p].slice(0, 8));
-    setPassiUsati(0); setFase("sorteggio"); setFermata(null);
+    setPassiUsati(0); setFase("dado"); setDadoRisultato(null);
   };
+
+  const tiraDado = () => {
+    if (dadoAnimating) return;
+    setDadoAnimating(true);
+    setDadoRisultato(null);
+    let count = 0;
+    const interval = setInterval(() => {
+      setDadoFacce(Math.floor(Math.random() * 6) + 1);
+      count++;
+      if (count >= 10) {
+        clearInterval(interval);
+        const finale = Math.floor(Math.random() * 6) + 1;
+        setDadoFacce(finale);
+        setDadoRisultato(finale);
+        setDadoAnimating(false);
+      }
+    }, 80);
+  };
+
+  const chiudiDado = () => { setFase("sorteggio"); setFermata(null); setDadoRisultato(null); };
 
   const passo = () => {
     const np = passiUsati + 1; setPassiUsati(np);
@@ -377,10 +400,60 @@ function GameScreen({ cittaKey, onBack }) {
             <p style={{ color:"#e2001a", fontFamily:"monospace", fontSize:"0.68rem",
               marginTop:8 }}>Hai già passato 2 volte — devi mimare questa fermata!</p>
           )}
+          {fase==="dado" && (
+            <div style={{ textAlign:"center" }}>
+              <p style={{ color:"#888", fontFamily:"monospace", fontSize:"0.72rem",
+                letterSpacing:"0.15em", marginBottom:16 }}>TIRA IL DADO PER SPOSTARTI</p>
+              {/* Dado SVG */}
+              <div onClick={!dadoAnimating ? tiraDado : undefined}
+                style={{ display:"inline-block", cursor: dadoAnimating ? "default" : "pointer",
+                  transform: dadoAnimating ? `rotate(${dadoFacce * 15}deg) scale(1.05)` : "rotate(0deg) scale(1)",
+                  transition: dadoAnimating ? "transform 0.08s" : "transform 0.3s",
+                  marginBottom:20 }}>
+                <svg width="80" height="80" viewBox="0 0 80 80">
+                  <rect x="4" y="4" width="72" height="72" rx="14" ry="14"
+                    fill={dadoRisultato ? city.appColore : "#333"}
+                    stroke={dadoRisultato ? "#fff" : "#555"} strokeWidth="2"/>
+                  {/* Punti dado */}
+                  {dadoFacce === 1 && <circle cx="40" cy="40" r="7" fill="white"/>}
+                  {dadoFacce === 2 && <><circle cx="25" cy="25" r="6" fill="white"/><circle cx="55" cy="55" r="6" fill="white"/></>}
+                  {dadoFacce === 3 && <><circle cx="22" cy="22" r="6" fill="white"/><circle cx="40" cy="40" r="6" fill="white"/><circle cx="58" cy="58" r="6" fill="white"/></>}
+                  {dadoFacce === 4 && <><circle cx="24" cy="24" r="6" fill="white"/><circle cx="56" cy="24" r="6" fill="white"/><circle cx="24" cy="56" r="6" fill="white"/><circle cx="56" cy="56" r="6" fill="white"/></>}
+                  {dadoFacce === 5 && <><circle cx="24" cy="24" r="5.5" fill="white"/><circle cx="56" cy="24" r="5.5" fill="white"/><circle cx="40" cy="40" r="5.5" fill="white"/><circle cx="24" cy="56" r="5.5" fill="white"/><circle cx="56" cy="56" r="5.5" fill="white"/></>}
+                  {dadoFacce === 6 && <><circle cx="24" cy="20" r="5" fill="white"/><circle cx="56" cy="20" r="5" fill="white"/><circle cx="24" cy="40" r="5" fill="white"/><circle cx="56" cy="40" r="5" fill="white"/><circle cx="24" cy="60" r="5" fill="white"/><circle cx="56" cy="60" r="5" fill="white"/></>}
+                </svg>
+              </div>
+              {dadoRisultato ? (
+                <div>
+                  <p style={{ color:"#fff", fontSize:"1.1rem", fontWeight:700, marginBottom:4 }}>
+                    Hai ottenuto <span style={{ color: city.appColore, fontSize:"1.6rem" }}>{dadoRisultato}</span>
+                  </p>
+                  <p style={{ color:"#666", fontFamily:"monospace", fontSize:"0.7rem", marginBottom:16 }}>
+                    sposta una pedina di {dadoRisultato} {dadoRisultato === 1 ? "fermata" : "fermate"}
+                  </p>
+                  <button onClick={chiudiDado} style={{
+                    width:"100%", padding:"14px", background:"#222",
+                    border:"1px solid #444", borderRadius:8, color:"#aaa",
+                    fontFamily:"inherit", fontSize:"1rem", fontWeight:700,
+                    cursor:"pointer", letterSpacing:"0.1em"
+                  }}>✓ Fatto — prossimo turno</button>
+                </div>
+              ) : (
+                <button onClick={tiraDado} disabled={dadoAnimating} style={{
+                  width:"100%", padding:"16px", background: dadoAnimating ? "#1a1a1a" : "#222",
+                  border:`2px solid ${dadoAnimating ? "#333" : city.appColore}`,
+                  borderRadius:8, color: dadoAnimating ? "#555" : "#fff",
+                  fontFamily:"inherit", fontSize:"1.2rem", fontWeight:900,
+                  cursor: dadoAnimating ? "default" : "pointer", letterSpacing:"0.15em",
+                  transition:"all 0.2s"
+                }}>🎲 {dadoAnimating ? "..." : "Tira il dado!"}</button>
+              )}
+            </div>
+          )}
         </div>
 
         <div style={{ marginTop:10, display:"flex", gap:8, justifyContent:"center" }}>
-          {fase !== "sorteggio" && (
+          {fase !== "sorteggio" && fase !== "dado" && (
             <button onClick={nuovoTurno} style={{ background:"none", border:"1px solid #2a2a2a",
               borderRadius:6, color:"#555", fontFamily:"monospace", fontSize:"0.68rem",
               padding:"5px 11px", cursor:"pointer" }}>↩ nuovo turno</button>
