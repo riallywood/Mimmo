@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CityMimo — Sorteggio Fermate</title>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>* { box-sizing: border-box; margin: 0; padding: 0; } body { background: #0d0d0d; } button:active { filter: brightness(0.9); }</style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CityMimo</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0d0d0d}</style>
 </head>
 <body>
 <div id="root"></div>
@@ -15,169 +15,72 @@
 const { useState } = React;
 
 
-// ── DATI CITTÀ ────────────────────────────────────────────────────────────────
+const DADO_DOTS = {
+  1:[[40,40]],2:[[24,24],[56,56]],3:[[22,22],[40,40],[58,58]],
+  4:[[24,24],[56,24],[24,56],[56,56]],5:[[24,24],[56,24],[40,40],[24,56],[56,56]],
+  6:[[24,20],[56,20],[24,40],[56,40],[24,60],[56,60]],
+};
+
+function Dado({ valore, colore }) {
+  return (
+    <svg width="100" height="100" viewBox="0 0 80 80">
+      <rect x="4" y="4" width="72" height="72" rx="14" ry="14" fill={colore} stroke="rgba(255,255,255,0.25)" strokeWidth="2"/>
+      {(DADO_DOTS[valore]||[]).map(([cx,cy],i) => <circle key={i} cx={cx} cy={cy} r="6" fill="white"/>)}
+    </svg>
+  );
+}
+
+const M1s = ["Sesto 1° Maggio FS","Sesto Marelli","Sesto Rondò","Villa S. Giovanni","Precotto","Turro","Gorla","Pasteur","Rovereto","Loreto","Lima","Porta Venezia","Palestro","San Babila","Duomo","Cordusio","Cairoli","Cadorna FN","Conciliazione","Pagano","Wagner","De Angeli","Gambara","Bande Nere","Primaticcio","Inganni","Bisceglie","San Leonardo","Uruguay","Bonola","Lampugnano","QT8","Amendola","Lotto","Molino Dorino","Pero","Rho Fieramilano","Buonarroti"];
+const M2s = ["Gessate","Cascina Antonietta","Villa Pompea","Villa Fiorita","Bussero","Cassina de' Pecchi","Cernusco sul Naviglio","Vimodrone","Cascina Burrona","Cascina Gobba","Cologno Nord","Cologno Centro","Cologno Sud","Crescenzago","Cimiano","Udine","Lambrate FS","Piola","Loreto","Caiazzo","Centrale FS","Gioia","Garibaldi FS","Moscova","Lanza","Cadorna FN","Sant'Ambrogio","S. Agostino","Porta Genova FS","Romolo","Famagosta","Assago Milanofiori Nord","Assago Milanofiori Forum","Abbiategrasso"];
+const M3s = ["Comasina","Affori FN","Affori Centro","Dergano","Maciachini","Zara","Sondrio","Centrale FS","Repubblica","Turati","Montenapoleone","Duomo","Missori","Crocetta","Porta Romana","Lodi T.I.B.B.","Brenta","Corvetto","Porto di Mare","Rogoredo FS","San Donato"];
+const M4s = ["Linate Aeroporto","Repetti","Forlanini FS","Argonne","Susa","Dateo","Tricolore","San Babila","Sforza Policlinico","Santa Sofia","Vetra","De Amicis","Sant'Ambrogio","Coni Zugna","California","Bolivar","Tolstoj","Frattini","Gelsomini","Segneri","San Cristoforo FS"];
+const M5s = ["Bignami","Tonale","Bicocca","Ca' Granda","Istria","Marche","Zara","Isola","Garibaldi FS","Monumentale","Cenisio","Gerusalemme","Domodossola FN","Tre Torri","Portello","Lotto","Segesta","San Siro Ippodromo","San Siro Stadio"];
+const Rs = ["Emilio Lepido","Villaggio Ina","Ducati","Manuzio","Stazione Borgo Panigale-Teatri di Vita","Triumvirato-Fabbri 1905","Pontelungo-MAST","Santa Viola-Opificio Golinelli","Prati di Caprara","Ospedale Maggiore","Saffi","Porta San Felice","Paladozza-San Felice","Paladozza-Riva Reno","Canale di Reno-Lame","Ugo Bassi","Piazza Maggiore-San Pietro","Indipendenza-8 Agosto","Zucca-Museo Ustica","Stalingrado","Aldo Moro-Regione-Fiera","Viale della Fiera-Liceo Copernico","Michelino-Fiera Nord","Repubblica","Piazza Spadolini","San Donato","San Donnino-Casalone","Villaggio S. Giorgio","Pirandello","Pilastro-Futura","Sighinolfi","Facoltà di Agraria","Stazione Centrale","Giacomo Matteotti-Stazione AV","Piazza dell'Unità"];
+const Vs = ["Stazione Centrale","Giacomo Matteotti-Stazione AV","Piazza dell'Unità","Mille","Ca' dei Fiori","Ippodromo","Aldini Valeriani","Caserme Rosse","Croce Coperta","Pinardi","Don Fiammelli","Lipparini-Ca' Bura","Bentini-Villa Torchi","Gorki-Teatro Centofiori","Sant'Anna-Byron","Shakespeare","Stazione Corticella"];
+
 const CITTA = {
-  MILANO: {
-    nome: "Milano",
-    sottotitolo: "Metropolitana",
-    emoji: "🔴",
-    disponibile: true,
-    appNome: "MiMMo",
-    appColore: "#e2001a",
-    linee: {
-      M1: { colore: "#e2001a", nome: "M1 Rossa", stazioni: [
-        "Sesto 1° Maggio FS","Sesto Marelli","Sesto Rondò","Villa S. Giovanni",
-        "Precotto","Turro","Gorla","Pasteur","Rovereto","Loreto","Lima",
-        "Porta Venezia","Palestro","San Babila","Duomo","Cordusio","Cairoli",
-        "Cadorna FN","Conciliazione","Pagano","Wagner","De Angeli","Gambara",
-        "Bande Nere","Primaticcio","Inganni","Bisceglie","San Leonardo","Uruguay",
-        "Bonola","Lampugnano","QT8","Amendola","Lotto","Molino Dorino","Pero",
-        "Rho Fieramilano","Buonarroti"
-      ]},
-      M2: { colore: "#008a32", nome: "M2 Verde", stazioni: [
-        "Gessate","Cascina Antonietta","Villa Pompea","Villa Fiorita","Bussero",
-        "Cassina de' Pecchi","Cernusco sul Naviglio","Vimodrone","Cascina Burrona",
-        "Cascina Gobba","Cologno Nord","Cologno Centro","Cologno Sud","Crescenzago",
-        "Cimiano","Udine","Lambrate FS","Piola","Loreto","Caiazzo","Centrale FS",
-        "Gioia","Garibaldi FS","Moscova","Lanza","Cadorna FN","Sant'Ambrogio",
-        "S. Agostino","Porta Genova FS","Romolo","Famagosta",
-        "Assago Milanofiori Nord","Assago Milanofiori Forum","Abbiategrasso"
-      ]},
-      M3: { colore: "#f7a800", nome: "M3 Gialla", stazioni: [
-        "Comasina","Affori FN","Affori Centro","Dergano","Maciachini","Zara",
-        "Sondrio","Centrale FS","Repubblica","Turati","Montenapoleone","Duomo",
-        "Missori","Crocetta","Porta Romana","Lodi T.I.B.B.","Brenta","Corvetto",
-        "Porto di Mare","Rogoredo FS","San Donato"
-      ]},
-      M4: { colore: "#005b9a", nome: "M4 Blu", stazioni: [
-        "Linate Aeroporto","Repetti","Forlanini FS","Argonne","Susa","Dateo",
-        "Tricolore","San Babila","Sforza Policlinico","Santa Sofia","Vetra",
-        "De Amicis","Sant'Ambrogio","Coni Zugna","California","Bolivar",
-        "Tolstoj","Frattini","Gelsomini","Segneri","San Cristoforo FS"
-      ]},
-      M5: { colore: "#82368c", nome: "M5 Lilla", stazioni: [
-        "Bignami","Tonale","Bicocca","Ca' Granda","Istria","Marche","Zara",
-        "Isola","Garibaldi FS","Monumentale","Cenisio","Gerusalemme",
-        "Domodossola FN","Tre Torri","Portello","Lotto","Segesta",
-        "San Siro Ippodromo","San Siro Stadio"
-      ]},
-    }
-  },
-  BOLOGNA: {
-    nome: "Bologna",
-    sottotitolo: "Tram",
-    emoji: "🟢",
-    disponibile: true,
-    appNome: "StramBO",
-    appColore: "#008a32",
-    linee: {
-      ROSSA: { colore: "#e2001a", nome: "Linea Rossa", stazioni: [
-        "Emilio Lepido","Villaggio Ina","Ducati","Manuzio",
-        "Stazione Borgo Panigale-Teatri di Vita","Triumvirato-Fabbri 1905",
-        "Pontelungo-MAST","Santa Viola-Opificio Golinelli","Prati di Caprara",
-        "Ospedale Maggiore","Saffi","Porta San Felice",
-        "Paladozza-San Felice","Paladozza-Riva Reno",
-        "Canale di Reno-Lame","Ugo Bassi","Piazza Maggiore-San Pietro",
-        "Indipendenza-8 Agosto","Zucca-Museo Ustica",
-        "Stalingrado","Aldo Moro-Regione-Fiera","Viale della Fiera-Liceo Copernico",
-        "Michelino-Fiera Nord","Repubblica","Piazza Spadolini",
-        "San Donato","San Donnino-Casalone","Villaggio S. Giorgio",
-        "Pirandello","Pilastro-Futura","Sighinolfi","Facoltà di Agraria",
-        "Stazione Centrale","Giacomo Matteotti-Stazione AV","Piazza dell'Unità"
-      ]},
-      VERDE: { colore: "#008a32", nome: "Linea Verde", stazioni: [
-        "Stazione Centrale","Giacomo Matteotti-Stazione AV","Piazza dell'Unità",
-        "Mille","Ca' dei Fiori","Ippodromo","Aldini Valeriani",
-        "Caserme Rosse","Croce Coperta","Pinardi","Don Fiammelli",
-        "Lipparini-Ca' Bura","Bentini-Villa Torchi","Gorki-Teatro Centofiori",
-        "Sant'Anna-Byron","Shakespeare","Stazione Corticella"
-      ]},
-    }
-  },
-  ROMA:    { nome: "Roma",    sottotitolo: "Metropolitana", emoji: "🟡", disponibile: false, appColore: "#888" },
-  FIRENZE: { nome: "Firenze", sottotitolo: "Tram",          emoji: "🟠", disponibile: false, appColore: "#888" },
-  NAPOLI:  { nome: "Napoli",  sottotitolo: "Metropolitana", emoji: "🔵", disponibile: false, appColore: "#888" },
+  MILANO: { nome:"Milano", sottotitolo:"Metropolitana", appNome:"MiMMo", appColore:"#e2001a", disponibile:true,
+    linee:{ M1:{colore:"#e2001a",nome:"M1 Rossa",stazioni:M1s}, M2:{colore:"#008a32",nome:"M2 Verde",stazioni:M2s}, M3:{colore:"#f7a800",nome:"M3 Gialla",stazioni:M3s}, M4:{colore:"#005b9a",nome:"M4 Blu",stazioni:M4s}, M5:{colore:"#82368c",nome:"M5 Lilla",stazioni:M5s} }},
+  BOLOGNA: { nome:"Bologna", sottotitolo:"Tram", appNome:"StramBO", appColore:"#008a32", disponibile:true,
+    linee:{ ROSSA:{colore:"#e2001a",nome:"Linea Rossa",stazioni:Rs}, VERDE:{colore:"#008a32",nome:"Linea Verde",stazioni:Vs} }},
+  ROMA:    { nome:"Roma",    sottotitolo:"Metropolitana", appNome:null, appColore:"#888", disponibile:false, linee:{} },
+  FIRENZE: { nome:"Firenze", sottotitolo:"Tram",          appNome:null, appColore:"#888", disponibile:false, linee:{} },
+  NAPOLI:  { nome:"Napoli",  sottotitolo:"Metropolitana", appNome:null, appColore:"#888", disponibile:false, linee:{} },
 };
 
 function buildTutte(linee) {
   const all = [];
-  for (const [key, data] of Object.entries(linee)) {
-    for (const s of data.stazioni) {
-      if (!all.find(x => x.nome === s)) {
-        all.push({ nome: s, linea: key, colore: data.colore, nomeLinea: data.nome });
-      }
-    }
-  }
+  for (const [,d] of Object.entries(linee))
+    for (const s of d.stazioni)
+      if (!all.find(x=>x.nome===s)) all.push({nome:s,colore:d.colore,nomeLinea:d.nome});
   return all;
 }
 
-const MAX_PASSI = 2;
+const BG = {minHeight:"100vh",background:"#0d0d0d",fontFamily:"Helvetica Neue,Arial,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",padding:"0 16px 40px"};
+const GRID = {position:"fixed",inset:0,zIndex:0,backgroundImage:"linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)",backgroundSize:"40px 40px"};
 
-// ── SCHERMATA SELEZIONE CITTÀ ─────────────────────────────────────────────────
 function CitySelector({ onSelect }) {
   return (
-    <div style={{ minHeight:"100vh", background:"#0d0d0d", display:"flex",
-      flexDirection:"column", alignItems:"center", justifyContent:"center",
-      padding:"24px 16px", fontFamily:"'Helvetica Neue',Arial,sans-serif" }}>
-
-      <div style={{ position:"fixed", inset:0, zIndex:0,
-        backgroundImage:"linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)",
-        backgroundSize:"40px 40px" }}/>
-
-      <div style={{ position:"relative", zIndex:1, textAlign:"center", marginBottom:40 }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:2 }}>
-          {[["C","#e2001a"],["i","#e2001a"],["t","#e2001a"],["y","#e2001a"],
-            ["M","#fff"],["i","#fff"],["m","#fff"],["o","#fff"]].map(([ch,col],i) => (
-            <span key={i} style={{ fontSize:44, fontWeight:900, color:col,
-              fontFamily:"Impact,Arial Black,sans-serif", letterSpacing:-1, lineHeight:1 }}>{ch}</span>
-          ))}
+    <div style={{...BG,justifyContent:"center",padding:"24px 16px"}}>
+      <div style={GRID}/>
+      <div style={{position:"relative",zIndex:1,textAlign:"center",marginBottom:40}}>
+        <div style={{fontSize:50,fontWeight:900,letterSpacing:-2,lineHeight:1,fontFamily:"Impact,Arial Black,sans-serif"}}>
+          <span style={{color:"#e2001a"}}>City</span><span style={{color:"#fff"}}>Mimo</span>
         </div>
-        <p style={{ color:"#555", fontSize:"0.72rem", margin:"8px 0 0",
-          letterSpacing:"0.3em", fontFamily:"monospace", textTransform:"uppercase" }}>
-          Il gioco dei mimi sui trasporti pubblici
-        </p>
+        <p style={{color:"#555",fontSize:"0.7rem",marginTop:8,letterSpacing:"0.3em",fontFamily:"monospace",textTransform:"uppercase"}}>Il gioco dei mimi sui trasporti pubblici</p>
       </div>
-
-      <div style={{ position:"relative", zIndex:1, width:"100%", maxWidth:420 }}>
-        <p style={{ color:"#666", fontSize:"0.8rem", textAlign:"center",
-          letterSpacing:"0.2em", fontFamily:"monospace", marginBottom:16, textTransform:"uppercase" }}>
-          Scegli la città
-        </p>
-
-        {Object.entries(CITTA).map(([key, city]) => (
-          <button key={key}
-            onClick={() => city.disponibile && onSelect(key)}
-            disabled={!city.disponibile}
-            style={{
-              display:"flex", alignItems:"center", justifyContent:"space-between",
-              width:"100%", padding:"16px 20px", marginBottom:10,
-              background: city.disponibile ? "#161616" : "#0f0f0f",
-              border:`1px solid ${city.disponibile ? "#333" : "#1a1a1a"}`,
-              borderRadius:12, cursor: city.disponibile ? "pointer" : "not-allowed",
-              transition:"all 0.2s",
-              opacity: city.disponibile ? 1 : 0.4,
-            }}
-            onMouseEnter={e => city.disponibile && (e.currentTarget.style.borderColor = city.appColore)}
-            onMouseLeave={e => city.disponibile && (e.currentTarget.style.borderColor = "#333")}
-          >
-            <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-              <div style={{ width:10, height:10, borderRadius:"50%",
-                background: city.disponibile ? city.appColore : "#333" }}/>
-              <div style={{ textAlign:"left" }}>
-                <div style={{ color: city.disponibile ? "#fff" : "#444",
-                  fontFamily:"inherit", fontSize:"1.1rem", fontWeight:700 }}>
-                  {city.nome}
-                </div>
-                <div style={{ color:"#555", fontSize:"0.72rem", fontFamily:"monospace" }}>
-                  {city.sottotitolo}
-                  {city.appNome ? ` · ${city.appNome}` : ""}
-                </div>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:400}}>
+        <p style={{color:"#555",fontSize:"0.72rem",textAlign:"center",letterSpacing:"0.2em",fontFamily:"monospace",marginBottom:14,textTransform:"uppercase"}}>Scegli la città</p>
+        {Object.entries(CITTA).map(([key,city]) => (
+          <button key={key} onClick={()=>city.disponibile&&onSelect(key)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",padding:"16px 20px",marginBottom:10,background:city.disponibile?"#161616":"#0f0f0f",border:"1px solid "+(city.disponibile?"#2a2a2a":"#181818"),borderRadius:12,cursor:city.disponibile?"pointer":"not-allowed",opacity:city.disponibile?1:0.35}}>
+            <div style={{display:"flex",alignItems:"center",gap:14}}>
+              <div style={{width:10,height:10,borderRadius:"50%",background:city.disponibile?city.appColore:"#333",flexShrink:0}}/>
+              <div style={{textAlign:"left"}}>
+                <div style={{color:city.disponibile?"#fff":"#444",fontSize:"1.05rem",fontWeight:700,fontFamily:"inherit"}}>{city.nome}</div>
+                <div style={{color:"#555",fontSize:"0.68rem",fontFamily:"monospace"}}>{city.sottotitolo}{city.appNome?" · "+city.appNome:""}</div>
               </div>
             </div>
-            <div style={{ color: city.disponibile ? "#444" : "#222",
-              fontSize:"0.75rem", fontFamily:"monospace" }}>
-              {city.disponibile ? "›" : "presto"}
-            </div>
+            <div style={{color:city.disponibile?"#444":"#222",fontSize:"0.72rem",fontFamily:"monospace"}}>{city.disponibile?"›":"presto"}</div>
           </button>
         ))}
       </div>
@@ -185,7 +88,8 @@ function CitySelector({ onSelect }) {
   );
 }
 
-// ── SCHERMATA GIOCO ───────────────────────────────────────────────────────────
+const MAX_PASSI = 2;
+
 function GameScreen({ cittaKey, onBack }) {
   const city = CITTA[cittaKey];
   const linee = city.linee;
@@ -199,284 +103,146 @@ function GameScreen({ cittaKey, onBack }) {
   const [usate, setUsate] = useState([]);
   const [fase, setFase] = useState("sorteggio");
   const [passiUsati, setPassiUsati] = useState(0);
-  const [dadoRisultato, setDadoRisultato] = useState(null);
-  const [dadoAnimating, setDadoAnimating] = useState(false);
-  const [dadoFacce, setDadoFacce] = useState(1);
+  const [dadoVal, setDadoVal] = useState(1);
+  const [dadoFinale, setDadoFinale] = useState(null);
+  const [dadoRolling, setDadoRolling] = useState(false);
 
-  const filtrate = filtroLinea === "TUTTE"
-    ? TUTTE
-    : linee[filtroLinea].stazioni.map(s => ({
-        nome: s, linea: filtroLinea,
-        colore: linee[filtroLinea].colore, nomeLinea: linee[filtroLinea].nome
-      }));
-
-  const daEstrarre = filtrate.filter(f => !usate.some(u => u.nome === f.nome));
-  const pick = pool => pool[Math.floor(Math.random() * pool.length)];
+  const pick = p => p[Math.floor(Math.random()*p.length)];
+  const getFl = () => filtroLinea==="TUTTE" ? TUTTE : linee[filtroLinea].stazioni.map(s=>({nome:s,colore:linee[filtroLinea].colore,nomeLinea:linee[filtroLinea].nome}));
 
   const sorteggia = () => {
     if (animating) return;
-    let pool = daEstrarre.length ? daEstrarre : filtrate;
-    if (!daEstrarre.length) setUsate([]);
+    const fl = getFl();
+    let pool = fl.filter(f=>!usate.find(u=>u.nome===f.nome));
+    if (!pool.length) { setUsate([]); pool=fl; }
     setAnimating(true);
-    setTimeout(() => {
-      setFermata(pick(pool)); setAnimating(false);
-      setFase(passiUsati >= MAX_PASSI ? "obbligato" : "scelta");
-    }, 400);
+    setTimeout(()=>{ setFermata(pick(pool)); setAnimating(false); setFase(passiUsati>=MAX_PASSI?"obbligato":"scelta"); },400);
   };
 
   const mimo = () => {
-    setUsate(p => [...p, fermata]);
-    setStoria(p => [fermata, ...p].slice(0, 8));
-    setPassiUsati(0); setFase("dado"); setDadoRisultato(null);
+    setUsate(p=>[...p,fermata]); setStoria(p=>[fermata,...p].slice(0,8));
+    setPassiUsati(0); setDadoVal(1); setDadoFinale(null); setFase("dado");
+  };
+
+  const passo = () => {
+    const np=passiUsati+1; setPassiUsati(np);
+    const fl=getFl();
+    let pool=fl.filter(f=>!usate.find(u=>u.nome===f.nome)&&f.nome!==fermata.nome);
+    if (!pool.length) pool=fl.filter(f=>f.nome!==fermata.nome);
+    setAnimating(true);
+    setTimeout(()=>{ setFermata(pick(pool)); setAnimating(false); setFase(np>=MAX_PASSI?"obbligato":"scelta"); },400);
   };
 
   const tiraDado = () => {
-    if (dadoAnimating) return;
-    setDadoAnimating(true);
-    setDadoRisultato(null);
-    let count = 0;
-    const interval = setInterval(() => {
-      setDadoFacce(Math.floor(Math.random() * 6) + 1);
-      count++;
-      if (count >= 10) {
-        clearInterval(interval);
-        const finale = Math.floor(Math.random() * 6) + 1;
-        setDadoFacce(finale);
-        setDadoRisultato(finale);
-        setDadoAnimating(false);
-      }
-    }, 80);
+    if (dadoRolling) return;
+    setDadoRolling(true); setDadoFinale(null);
+    let n=0;
+    const iv=setInterval(()=>{
+      setDadoVal(Math.floor(Math.random()*6)+1); n++;
+      if (n>=12) { clearInterval(iv); const r=Math.floor(Math.random()*6)+1; setDadoVal(r); setDadoFinale(r); setDadoRolling(false); }
+    },80);
   };
 
-  const chiudiDado = () => { setFase("sorteggio"); setFermata(null); setDadoRisultato(null); };
+  const nuovoTurno = () => { setFermata(null); setFase("sorteggio"); setPassiUsati(0); setDadoVal(1); setDadoFinale(null); };
+  const reset = () => { setUsate([]); setFermata(null); setStoria([]); setFase("sorteggio"); setPassiUsati(0); setDadoVal(1); setDadoFinale(null); };
 
-  const passo = () => {
-    const np = passiUsati + 1; setPassiUsati(np);
-    let pool = daEstrarre.filter(f => f.nome !== fermata.nome);
-    if (!pool.length) pool = filtrate;
-    setAnimating(true);
-    setTimeout(() => {
-      setFermata(pick(pool)); setAnimating(false);
-      setFase(np >= MAX_PASSI ? "obbligato" : "scelta");
-    }, 400);
-  };
-
-  const nuovoTurno = () => { setFermata(null); setFase("sorteggio"); setPassiUsati(0); };
-  const reset = () => { setUsate([]); setFermata(null); setStoria([]); setFase("sorteggio"); setPassiUsati(0); };
-
-  const isGiallo = fermata?.colore === "#f7a800";
+  const fl = getFl();
+  const usateN = fl.filter(f=>usate.find(u=>u.nome===f.nome)).length;
+  const isGiallo = fermata&&fermata.colore==="#f7a800";
+  const isDado = fase==="dado";
 
   return (
-    <div style={{ minHeight:"100vh", background:"#0d0d0d",
-      fontFamily:"'Helvetica Neue',Arial,sans-serif",
-      display:"flex", flexDirection:"column", alignItems:"center", padding:"0 16px 40px" }}>
-
-      <div style={{ position:"fixed", inset:0, zIndex:0,
-        backgroundImage:"linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)",
-        backgroundSize:"40px 40px" }}/>
-
-      {/* Header */}
-      <div style={{ position:"relative", zIndex:1, width:"100%", maxWidth:520,
-        display:"flex", alignItems:"center", paddingTop:20, marginBottom:4 }}>
-        <button onClick={onBack} style={{ background:"none", border:"1px solid #2a2a2a",
-          borderRadius:6, color:"#555", fontFamily:"monospace", fontSize:"0.75rem",
-          padding:"5px 10px", cursor:"pointer", flexShrink:0 }}>← città</button>
-        <div style={{ flex:1, textAlign:"center" }}>
-          <span style={{ fontSize:26, fontWeight:900, color:city.appColore,
-            fontFamily:"Impact,Arial Black,sans-serif", letterSpacing:-1 }}>
-            {city.appNome}
-          </span>
-          <span style={{ color:"#444", fontSize:"0.7rem", fontFamily:"monospace",
-            display:"block", letterSpacing:"0.15em" }}>{city.nome} · {city.sottotitolo}</span>
+    <div style={BG}>
+      <div style={GRID}/>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:520,display:"flex",alignItems:"center",paddingTop:20,marginBottom:6}}>
+        <button onClick={onBack} style={{background:"none",border:"1px solid #2a2a2a",borderRadius:6,color:"#555",fontFamily:"monospace",fontSize:"0.7rem",padding:"5px 10px",cursor:"pointer",flexShrink:0}}>← città</button>
+        <div style={{flex:1,textAlign:"center"}}>
+          <div style={{color:city.appColore,fontFamily:"Impact,Arial Black,sans-serif",fontSize:24,fontWeight:900,letterSpacing:-1}}>{city.appNome}</div>
+          <div style={{color:"#444",fontSize:"0.62rem",fontFamily:"monospace"}}>{city.nome} · {city.sottotitolo}</div>
         </div>
-        <div style={{ width:60 }}/>
+        <div style={{width:60}}/>
       </div>
 
-      {/* Filtro linee */}
-      <div style={{ position:"relative", zIndex:1, display:"flex", gap:5,
-        flexWrap:"wrap", justifyContent:"center", margin:"12px 0 16px" }}>
-        {["TUTTE", ...lineeKeys].map(k => {
-          const active = filtroLinea === k;
-          const col = k === "TUTTE" ? "#fff" : linee[k].colore;
-          const textCol = active ? (k === "TUTTE" ? "#000" : (col === "#f7a800" ? "#000" : "#fff")) : "#aaa";
-          const label = k === "TUTTE" ? "Tutte" : (lineeKeys.length <= 2 ? linee[k].nome : k);
-          return (
-            <button key={k}
-              onClick={() => { setFiltroLinea(k); setFermata(null); setFase("sorteggio"); setPassiUsati(0); }}
-              style={{
-                padding:"5px 12px", borderRadius:4,
-                border:`2px solid ${active ? col : "rgba(255,255,255,0.15)"}`,
-                background: active ? col : "transparent", color: textCol,
-                fontFamily:"inherit", fontSize:"0.8rem", fontWeight: active ? 700 : 400,
-                cursor:"pointer", transition:"all 0.2s",
-                boxShadow: active ? `0 0 10px ${col}55` : "none"
-              }}>{label}</button>
-          );
+      <div style={{position:"relative",zIndex:1,display:"flex",gap:5,flexWrap:"wrap",justifyContent:"center",margin:"10px 0 14px"}}>
+        {["TUTTE",...lineeKeys].map(k=>{
+          const active=filtroLinea===k;
+          const col=k==="TUTTE"?"#fff":linee[k].colore;
+          const tc=active?(k==="TUTTE"||col==="#f7a800"?"#000":"#fff"):"#aaa";
+          const label=k==="TUTTE"?"Tutte":(lineeKeys.length<=2?linee[k].nome:k);
+          return <button key={k} onClick={()=>{setFiltroLinea(k);setFermata(null);setFase("sorteggio");setPassiUsati(0);}} style={{padding:"5px 12px",borderRadius:4,border:"2px solid "+(active?col:"rgba(255,255,255,0.12)"),background:active?col:"transparent",color:tc,fontFamily:"inherit",fontSize:"0.78rem",fontWeight:active?700:400,cursor:"pointer"}}>{label}</button>;
         })}
       </div>
 
-      {/* Card */}
-      <div style={{
-        position:"relative", zIndex:1, width:"100%", maxWidth:520,
-        background:"#161616",
-        border:`1px solid ${fase==="obbligato" ? "rgba(226,0,26,0.5)" : "rgba(255,255,255,0.08)"}`,
-        borderRadius:16, padding:"24px 20px", textAlign:"center",
-        boxShadow: fermata ? `0 0 60px ${fermata.colore}22` : "0 8px 40px rgba(0,0,0,0.6)",
-        transition:"all 0.4s"
-      }}>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:520,background:"#161616",border:"1px solid "+(fase==="obbligato"?"rgba(226,0,26,0.4)":"rgba(255,255,255,0.07)"),borderRadius:16,padding:"24px 20px",textAlign:"center",transition:"all 0.3s"}}>
 
-        {fase !== "sorteggio" && (
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, marginBottom:16 }}>
-            {[0,1].map(i => (
-              <div key={i} style={{ width:34, height:6, borderRadius:3,
-                background: i < passiUsati ? "#444" : "rgba(255,255,255,0.12)" }}/>
-            ))}
-            <span style={{ color: fase==="obbligato"?"#e2001a":"#555",
-              fontFamily:"monospace", fontSize:"0.65rem", marginLeft:6, letterSpacing:"0.1em" }}>
-              {fase==="obbligato" ? "⚠ OBBLIGATO A MIMARE" : `PASSO ${passiUsati}/${MAX_PASSI}`}
-            </span>
+        {(fase==="scelta"||fase==="obbligato")&&(
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:16}}>
+            {[0,1].map(i=><div key={i} style={{width:32,height:5,borderRadius:3,background:i<passiUsati?"#333":"rgba(255,255,255,0.1)"}}/>)}
+            <span style={{color:fase==="obbligato"?"#e2001a":"#555",fontFamily:"monospace",fontSize:"0.63rem",marginLeft:6}}>{fase==="obbligato"?"⚠ OBBLIGATO A MIMARE":"PASSO "+passiUsati+"/"+MAX_PASSI}</span>
           </div>
         )}
 
-        <div style={{ minHeight:150, display:"flex", flexDirection:"column",
-          alignItems:"center", justifyContent:"center" }}>
-          {fermata ? (
-            <div style={{ opacity:animating?0:1, transform:animating?"scale(0.9)":"scale(1)", transition:"all 0.3s" }}>
-              <div style={{ display:"inline-block", background:fermata.colore,
-                color: isGiallo ? "#000" : "#fff",
-                fontSize:"0.82rem", letterSpacing:"0.15em", fontWeight:700,
-                padding:"4px 14px", borderRadius:4, marginBottom:14,
-                boxShadow:`0 4px 18px ${fermata.colore}66`
-              }}>{fermata.nomeLinea}</div>
-              <div style={{ color:"#fff", fontSize:"clamp(1.3rem,5.5vw,2.4rem)",
-                fontWeight:900, lineHeight:1.2, padding:"0 8px",
-                textShadow:`0 0 28px ${fermata.colore}88`
-              }}>{fermata.nome}</div>
-            </div>
-          ) : (
-            <div style={{ color:"#444", fontSize:"0.9rem", letterSpacing:"0.2em", fontFamily:"monospace" }}>
-              — premi il tasto per sorteggiare —
-            </div>
-          )}
-        </div>
-
-        <div style={{ color:"#555", fontFamily:"monospace", fontSize:"0.7rem", marginTop:8 }}>
-          {(() => {
-            const usateN = filtrate.filter(f => usate.some(u => u.nome === f.nome)).length;
-            const rimaste = filtrate.length - usateN;
-            return usateN > 0 ? `${rimaste} rimaste · ${usateN} già mimate` : `${filtrate.length} fermate disponibili`;
-          })()}
-        </div>
-
-        <div style={{ marginTop:20 }}>
-          {fase === "sorteggio" && (
-            <button onClick={sorteggia} disabled={animating} style={{
-              width:"100%", padding:"16px 20px", background: city.appColore,
-              border:"none", borderRadius:8, color: city.appColore === "#f7a800" ? "#000" : "#fff",
-              fontFamily:"inherit", fontSize:"1.35rem", fontWeight:900, letterSpacing:"0.2em",
-              cursor:animating?"not-allowed":"pointer",
-              boxShadow:`0 6px 28px ${city.appColore}55`,
-              opacity:animating?0.7:1, transition:"all 0.15s"
-            }}>Sorteggia!</button>
-          )}
-          {(fase==="scelta"||fase==="obbligato") && !animating && (
-            <div style={{ display:"flex", gap:10 }}>
-              <button onClick={mimo} style={{
-                flex:2, padding:"16px 10px", background:fermata?.colore||city.appColore,
-                border:"none", borderRadius:8, color: isGiallo ? "#000" : "#fff",
-                fontFamily:"inherit", fontSize:"1.25rem", fontWeight:900,
-                cursor:"pointer", boxShadow:`0 6px 22px ${fermata?.colore||city.appColore}55`
-              }}>🎭 Mimo!</button>
-              {fase !== "obbligato" && (
-                <button onClick={passo} style={{
-                  flex:1, padding:"16px 10px", background:"transparent",
-                  border:"2px solid #333", borderRadius:8, color:"#666",
-                  fontFamily:"inherit", fontSize:"1.25rem", fontWeight:700, cursor:"pointer"
-                }}>Passo</button>
-              )}
-            </div>
-          )}
-          {fase==="obbligato" && !animating && (
-            <p style={{ color:"#e2001a", fontFamily:"monospace", fontSize:"0.68rem",
-              marginTop:8 }}>Hai già passato 2 volte — devi mimare questa fermata!</p>
-          )}
-          {fase==="dado" && (
-            <div style={{ textAlign:"center" }}>
-              <p style={{ color:"#888", fontFamily:"monospace", fontSize:"0.72rem",
-                letterSpacing:"0.15em", marginBottom:16 }}>TIRA IL DADO PER SPOSTARTI</p>
-              {/* Dado SVG */}
-              <div onClick={!dadoAnimating ? tiraDado : undefined}
-                style={{ display:"inline-block", cursor: dadoAnimating ? "default" : "pointer",
-                  transform: dadoAnimating ? `rotate(${dadoFacce * 15}deg) scale(1.05)` : "rotate(0deg) scale(1)",
-                  transition: dadoAnimating ? "transform 0.08s" : "transform 0.3s",
-                  marginBottom:20 }}>
-                <svg width="80" height="80" viewBox="0 0 80 80">
-                  <rect x="4" y="4" width="72" height="72" rx="14" ry="14"
-                    fill={dadoRisultato ? city.appColore : "#333"}
-                    stroke={dadoRisultato ? "#fff" : "#555"} strokeWidth="2"/>
-                  {/* Punti dado */}
-                  {dadoFacce === 1 && <circle cx="40" cy="40" r="7" fill="white"/>}
-                  {dadoFacce === 2 && <><circle cx="25" cy="25" r="6" fill="white"/><circle cx="55" cy="55" r="6" fill="white"/></>}
-                  {dadoFacce === 3 && <><circle cx="22" cy="22" r="6" fill="white"/><circle cx="40" cy="40" r="6" fill="white"/><circle cx="58" cy="58" r="6" fill="white"/></>}
-                  {dadoFacce === 4 && <><circle cx="24" cy="24" r="6" fill="white"/><circle cx="56" cy="24" r="6" fill="white"/><circle cx="24" cy="56" r="6" fill="white"/><circle cx="56" cy="56" r="6" fill="white"/></>}
-                  {dadoFacce === 5 && <><circle cx="24" cy="24" r="5.5" fill="white"/><circle cx="56" cy="24" r="5.5" fill="white"/><circle cx="40" cy="40" r="5.5" fill="white"/><circle cx="24" cy="56" r="5.5" fill="white"/><circle cx="56" cy="56" r="5.5" fill="white"/></>}
-                  {dadoFacce === 6 && <><circle cx="24" cy="20" r="5" fill="white"/><circle cx="56" cy="20" r="5" fill="white"/><circle cx="24" cy="40" r="5" fill="white"/><circle cx="56" cy="40" r="5" fill="white"/><circle cx="24" cy="60" r="5" fill="white"/><circle cx="56" cy="60" r="5" fill="white"/></>}
-                </svg>
+        {!isDado&&(
+          <div style={{minHeight:150,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+            {fermata?(
+              <div style={{opacity:animating?0:1,transform:animating?"scale(0.9)":"scale(1)",transition:"all 0.3s"}}>
+                <div style={{display:"inline-block",background:fermata.colore,color:isGiallo?"#000":"#fff",fontSize:"0.8rem",fontWeight:700,letterSpacing:"0.15em",padding:"4px 14px",borderRadius:4,marginBottom:14,boxShadow:"0 4px 16px "+fermata.colore+"55"}}>{fermata.nomeLinea}</div>
+                <div style={{color:"#fff",fontSize:"clamp(1.3rem,5.5vw,2.4rem)",fontWeight:900,lineHeight:1.2,padding:"0 8px",textShadow:"0 0 24px "+fermata.colore+"77"}}>{fermata.nome}</div>
               </div>
-              {dadoRisultato ? (
-                <div>
-                  <p style={{ color:"#fff", fontSize:"1.1rem", fontWeight:700, marginBottom:4 }}>
-                    Hai ottenuto <span style={{ color: city.appColore, fontSize:"1.6rem" }}>{dadoRisultato}</span>
-                  </p>
-                  <p style={{ color:"#666", fontFamily:"monospace", fontSize:"0.7rem", marginBottom:16 }}>
-                    sposta una pedina di {dadoRisultato} {dadoRisultato === 1 ? "fermata" : "fermate"}
-                  </p>
-                  <button onClick={chiudiDado} style={{
-                    width:"100%", padding:"14px", background:"#222",
-                    border:"1px solid #444", borderRadius:8, color:"#aaa",
-                    fontFamily:"inherit", fontSize:"1rem", fontWeight:700,
-                    cursor:"pointer", letterSpacing:"0.1em"
-                  }}>✓ Fatto — prossimo turno</button>
-                </div>
-              ) : (
-                <button onClick={tiraDado} disabled={dadoAnimating} style={{
-                  width:"100%", padding:"16px", background: dadoAnimating ? "#1a1a1a" : "#222",
-                  border:`2px solid ${dadoAnimating ? "#333" : city.appColore}`,
-                  borderRadius:8, color: dadoAnimating ? "#555" : "#fff",
-                  fontFamily:"inherit", fontSize:"1.2rem", fontWeight:900,
-                  cursor: dadoAnimating ? "default" : "pointer", letterSpacing:"0.15em",
-                  transition:"all 0.2s"
-                }}>🎲 {dadoAnimating ? "..." : "Tira il dado!"}</button>
-              )}
-            </div>
-          )}
-        </div>
+            ):(
+              <div style={{color:"#3a3a3a",fontSize:"0.82rem",letterSpacing:"0.2em",fontFamily:"monospace"}}>— premi il tasto per sorteggiare —</div>
+            )}
+          </div>
+        )}
 
-        <div style={{ marginTop:10, display:"flex", gap:8, justifyContent:"center" }}>
-          {fase !== "sorteggio" && fase !== "dado" && (
-            <button onClick={nuovoTurno} style={{ background:"none", border:"1px solid #2a2a2a",
-              borderRadius:6, color:"#555", fontFamily:"monospace", fontSize:"0.68rem",
-              padding:"5px 11px", cursor:"pointer" }}>↩ nuovo turno</button>
-          )}
-          {storia.length > 0 && (
-            <button onClick={reset} style={{ background:"none", border:"1px solid #2a2a2a",
-              borderRadius:6, color:"#555", fontFamily:"monospace", fontSize:"0.68rem",
-              padding:"5px 11px", cursor:"pointer" }}>↺ reset partita</button>
-          )}
-        </div>
+        {isDado&&(
+          <div style={{padding:"8px 0"}}>
+            <p style={{color:"#555",fontFamily:"monospace",fontSize:"0.65rem",letterSpacing:"0.15em",marginBottom:20,textTransform:"uppercase"}}>Tira il dado per spostarti</p>
+            <div style={{display:"flex",justifyContent:"center",marginBottom:20,transition:dadoRolling?"transform 0.08s":"transform 0.4s ease-out",transform:dadoRolling?"rotate("+(dadoVal*30)+"deg) scale(1.1)":"rotate(0deg) scale(1)"}}>
+              <Dado valore={dadoVal} colore={dadoFinale?city.appColore:"#2a2a2a"}/>
+            </div>
+            {dadoFinale?(
+              <div>
+                <p style={{color:"#fff",fontSize:"1rem",fontWeight:700,marginBottom:4}}>Hai ottenuto <span style={{color:city.appColore,fontSize:"1.8rem"}}>{dadoFinale}</span></p>
+                <p style={{color:"#555",fontFamily:"monospace",fontSize:"0.65rem",marginBottom:20}}>sposta una pedina di {dadoFinale} {dadoFinale===1?"fermata":"fermate"}</p>
+                <button onClick={nuovoTurno} style={{width:"100%",padding:"14px",background:"#1e1e1e",border:"1px solid #333",borderRadius:8,color:"#777",fontFamily:"inherit",fontSize:"0.95rem",fontWeight:700,cursor:"pointer",letterSpacing:"0.1em"}}>✓ Fatto — prossimo turno</button>
+              </div>
+            ):(
+              <button onClick={tiraDado} disabled={dadoRolling} style={{width:"100%",padding:"16px",borderRadius:8,background:dadoRolling?"#1a1a1a":"#1e1e1e",border:"2px solid "+(dadoRolling?"#2a2a2a":city.appColore),color:dadoRolling?"#444":"#fff",fontFamily:"inherit",fontSize:"1.2rem",fontWeight:900,cursor:dadoRolling?"default":"pointer",letterSpacing:"0.15em",transition:"all 0.2s"}}>{dadoRolling?"...":"🎲 Tira il dado!"}</button>
+            )}
+          </div>
+        )}
+
+        {!isDado&&<div style={{color:"#3a3a3a",fontFamily:"monospace",fontSize:"0.65rem",marginTop:10}}>{usateN>0?`${fl.length-usateN} rimaste · ${usateN} già mimate`:`${fl.length} fermate disponibili`}</div>}
+
+        {!isDado&&(
+          <div style={{marginTop:18}}>
+            {fase==="sorteggio"&&<button onClick={sorteggia} disabled={animating} style={{width:"100%",padding:"16px",background:city.appColore,border:"none",borderRadius:8,color:city.appColore==="#f7a800"?"#000":"#fff",fontFamily:"inherit",fontSize:"1.3rem",fontWeight:900,letterSpacing:"0.2em",cursor:animating?"not-allowed":"pointer",boxShadow:"0 6px 24px "+city.appColore+"44",opacity:animating?0.7:1,transition:"all 0.15s"}}>Sorteggia!</button>}
+            {(fase==="scelta"||fase==="obbligato")&&!animating&&(
+              <div style={{display:"flex",gap:10}}>
+                <button onClick={mimo} style={{flex:2,padding:"16px 10px",background:fermata?fermata.colore:city.appColore,border:"none",borderRadius:8,color:isGiallo?"#000":"#fff",fontFamily:"inherit",fontSize:"1.2rem",fontWeight:900,cursor:"pointer",boxShadow:"0 6px 20px "+(fermata?fermata.colore:city.appColore)+"44"}}>🎭 Mimo!</button>
+                {fase!=="obbligato"&&<button onClick={passo} style={{flex:1,padding:"16px 10px",background:"transparent",border:"2px solid #2a2a2a",borderRadius:8,color:"#555",fontFamily:"inherit",fontSize:"1.2rem",fontWeight:700,cursor:"pointer"}}>Passo</button>}
+              </div>
+            )}
+            {fase==="obbligato"&&!animating&&<p style={{color:"#e2001a",fontFamily:"monospace",fontSize:"0.63rem",marginTop:8}}>Hai già passato 2 volte — devi mimare questa fermata!</p>}
+          </div>
+        )}
+
+        {!isDado&&storia.length>0&&(
+          <div style={{marginTop:10,display:"flex",justifyContent:"center"}}>
+            <button onClick={reset} style={{background:"none",border:"1px solid #1e1e1e",borderRadius:6,color:"#3a3a3a",fontFamily:"monospace",fontSize:"0.62rem",padding:"5px 10px",cursor:"pointer"}}>↺ reset partita</button>
+          </div>
+        )}
       </div>
 
-      {storia.length > 0 && (
-        <div style={{ position:"relative", zIndex:1, width:"100%", maxWidth:520, marginTop:16 }}>
-          <p style={{ color:"#444", fontFamily:"monospace", fontSize:"0.65rem",
-            letterSpacing:"0.2em", textAlign:"center", marginBottom:8 }}>FERMATE MIMATE</p>
-          {storia.map((f,i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center", gap:12,
-              background:"#111", border:"1px solid #222", borderRadius:6,
-              padding:"7px 14px", marginBottom:4, opacity:1-i*0.1 }}>
-              <div style={{ width:8, height:8, borderRadius:"50%", background:f.colore, flexShrink:0 }}/>
-              <span style={{ color:"#555", fontFamily:"monospace", fontSize:"0.65rem", flexShrink:0 }}>{f.nomeLinea}</span>
-              <span style={{ color:"#888", fontFamily:"inherit", fontSize:"0.82rem" }}>{f.nome}</span>
+      {storia.length>0&&!isDado&&(
+        <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:520,marginTop:14}}>
+          <p style={{color:"#333",fontFamily:"monospace",fontSize:"0.6rem",letterSpacing:"0.2em",textAlign:"center",marginBottom:8,textTransform:"uppercase"}}>Fermate mimate</p>
+          {storia.map((f,i)=>(
+            <div key={i} style={{display:"flex",alignItems:"center",gap:10,background:"#111",border:"1px solid #1a1a1a",borderRadius:6,padding:"7px 14px",marginBottom:4,opacity:1-i*0.1}}>
+              <div style={{width:7,height:7,borderRadius:"50%",background:f.colore,flexShrink:0}}/>
+              <span style={{color:"#3a3a3a",fontFamily:"monospace",fontSize:"0.6rem",flexShrink:0}}>{f.nomeLinea}</span>
+              <span style={{color:"#666",fontSize:"0.8rem"}}>{f.nome}</span>
             </div>
           ))}
         </div>
@@ -485,14 +251,10 @@ function GameScreen({ cittaKey, onBack }) {
   );
 }
 
-// ── APP ROOT ──────────────────────────────────────────────────────────────────
 function App() {
-  const [cittaSelezionata, setCittaSelezionata] = useState(null);
-
-  if (!cittaSelezionata) {
-    return <CitySelector onSelect={setCittaSelezionata} />;
-  }
-  return <GameScreen cittaKey={cittaSelezionata} onBack={() => setCittaSelezionata(null)} />;
+  const [citta, setCitta] = useState(null);
+  if (!citta) return <CitySelector onSelect={setCitta}/>;
+  return <GameScreen cittaKey={citta} onBack={()=>setCitta(null)}/>;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
