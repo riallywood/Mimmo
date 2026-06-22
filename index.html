@@ -4,260 +4,459 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>CityMimo</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0d0d0d}</style>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d0d0d; font-family: 'Helvetica Neue', Arial, sans-serif; min-height: 100vh; }
+.grid-bg { position: fixed; inset: 0; z-index: 0; background-image: linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px); background-size: 40px 40px; pointer-events: none; }
+.screen { display: none; flex-direction: column; align-items: center; min-height: 100vh; padding: 0 16px 60px; }
+.screen.active { display: flex; }
+button { cursor: pointer; font-family: inherit; }
+button:active { filter: brightness(0.85); }
+/* City selector */
+#city-screen { justify-content: center; padding: 24px 16px; }
+.city-title { font-size: 48px; font-weight: 900; letter-spacing: -2px; line-height: 1; font-family: Impact, Arial Black, sans-serif; text-align: center; margin-bottom: 8px; }
+.city-title span:first-child { color: #e2001a; }
+.city-title span:last-child { color: #fff; }
+.city-sub { color: #555; font-size: 0.7rem; letter-spacing: 0.3em; font-family: monospace; text-transform: uppercase; text-align: center; margin-bottom: 40px; }
+.city-list { width: 100%; max-width: 400px; }
+.city-list p { color: #555; font-size: 0.72rem; text-align: center; letter-spacing: 0.2em; font-family: monospace; margin-bottom: 14px; text-transform: uppercase; }
+.city-btn { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 16px 20px; margin-bottom: 10px; background: #161616; border: 1px solid #2a2a2a; border-radius: 12px; transition: border-color 0.2s; }
+.city-btn:hover:not(:disabled) { border-color: var(--c); }
+.city-btn:disabled { opacity: 0.35; cursor: not-allowed; background: #0f0f0f; border-color: #181818; }
+.city-btn .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+.city-btn .info { text-align: left; margin-left: 14px; }
+.city-btn .info strong { color: #fff; font-size: 1.05rem; display: block; }
+.city-btn .info small { color: #555; font-size: 0.68rem; font-family: monospace; }
+.city-btn .arrow { color: #444; font-size: 0.72rem; font-family: monospace; }
+/* Game screen */
+#game-screen { position: relative; }
+.game-header { position: relative; z-index: 1; width: 100%; max-width: 520px; display: flex; align-items: center; padding-top: 20px; margin-bottom: 6px; }
+.back-btn { background: none; border: 1px solid #2a2a2a; border-radius: 6px; color: #555; font-family: monospace; font-size: 0.75rem; padding: 5px 10px; flex-shrink: 0; }
+.game-title-wrap { flex: 1; text-align: center; }
+.game-title { font-family: Impact, Arial Black, sans-serif; font-size: 24px; font-weight: 900; letter-spacing: -1px; }
+.game-sub { color: #444; font-size: 0.62rem; font-family: monospace; display: block; }
+.spacer60 { width: 60px; }
+/* Filtri */
+.filters { position: relative; z-index: 1; display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; margin: 10px 0 14px; }
+.filter-btn { padding: 5px 12px; border-radius: 4px; border: 2px solid rgba(255,255,255,0.12); background: transparent; color: #aaa; font-size: 0.78rem; font-weight: 400; transition: all 0.2s; }
+.filter-btn.active { font-weight: 700; }
+/* Card */
+.card { position: relative; z-index: 1; width: 100%; max-width: 520px; background: #161616; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 24px 20px; text-align: center; transition: all 0.3s; }
+.card.obbligato { border-color: rgba(226,0,26,0.4); }
+.passo-indicator { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 16px; }
+.passo-bar { width: 32px; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.1); transition: background 0.3s; }
+.passo-bar.used { background: #333; }
+.passo-label { font-family: monospace; font-size: 0.63rem; margin-left: 6px; color: #555; }
+.passo-label.obbl { color: #e2001a; }
+.fermata-area { min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s; }
+.fermata-area.anim { opacity: 0; transform: scale(0.9); }
+.linea-badge { display: inline-block; font-size: 0.82rem; letter-spacing: 0.15em; font-weight: 700; padding: 4px 14px; border-radius: 4px; margin-bottom: 14px; }
+.fermata-nome { color: #fff; font-size: clamp(1.3rem, 5.5vw, 2.4rem); font-weight: 900; line-height: 1.2; padding: 0 8px; }
+.placeholder { color: #3a3a3a; font-size: 0.82rem; letter-spacing: 0.2em; font-family: monospace; }
+.counter { color: #3a3a3a; font-family: monospace; font-size: 0.65rem; margin-top: 10px; }
+.actions { margin-top: 18px; }
+.sort-btn { width: 100%; padding: 16px; border: none; border-radius: 8px; font-size: 1.35rem; font-weight: 900; letter-spacing: 0.2em; transition: all 0.15s; }
+.mimo-row { display: flex; gap: 10px; }
+.mimo-btn { flex: 2; padding: 16px 10px; border: none; border-radius: 8px; font-size: 1.25rem; font-weight: 900; color: #fff; }
+.passo-btn { flex: 1; padding: 16px 10px; background: transparent; border: 2px solid #333; border-radius: 8px; color: #666; font-size: 1.25rem; font-weight: 700; }
+.obbl-msg { color: #e2001a; font-family: monospace; font-size: 0.68rem; margin-top: 8px; }
+.sec-btns { margin-top: 10px; display: flex; gap: 8px; justify-content: center; }
+.sec-btn { background: none; border: 1px solid #2a2a2a; border-radius: 6px; color: #555; font-family: monospace; font-size: 0.68rem; padding: 5px 11px; }
+/* Storia */
+.storia-wrap { position: relative; z-index: 1; width: 100%; max-width: 520px; margin-top: 16px; }
+.storia-title { color: #333; font-family: monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-align: center; margin-bottom: 8px; text-transform: uppercase; }
+.storia-item { display: flex; align-items: center; gap: 10px; background: #111; border: 1px solid #1a1a1a; border-radius: 6px; padding: 7px 14px; margin-bottom: 4px; }
+.storia-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.storia-linea { color: #3a3a3a; font-family: monospace; font-size: 0.6rem; flex-shrink: 0; }
+.storia-nome { color: #666; font-size: 0.8rem; }
+/* Dado fisso */
+#dado-btn { position: fixed; bottom: 24px; right: 20px; z-index: 100; width: 56px; height: 56px; border-radius: 50%; background: #222; border: 2px solid #444; font-size: 26px; box-shadow: 0 4px 20px rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; }
+#dado-btn.visible { display: flex; }
+/* Modale dado */
+#dado-modal { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.8); display: none; align-items: flex-end; justify-content: center; }
+#dado-modal.open { display: flex; }
+.dado-panel { background: #1a1a1a; border: 1px solid #333; border-radius: 20px 20px 0 0; padding: 28px 24px 44px; width: 100%; max-width: 420px; text-align: center; }
+.dado-label { color: #555; font-family: monospace; font-size: 0.65rem; letter-spacing: 0.2em; margin-bottom: 20px; text-transform: uppercase; }
+.dado-svg-wrap { display: flex; justify-content: center; margin-bottom: 24px; transition: transform 0.1s; }
+.dado-svg-wrap.spinning { animation: spin 0.1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg) scale(1.1); } to { transform: rotate(60deg) scale(1.1); } }
+.dado-result { color: #fff; font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+.dado-result span { font-size: 2.2rem; font-weight: 900; }
+.dado-result-sub { color: #666; font-family: monospace; font-size: 0.68rem; margin-bottom: 24px; }
+.dado-tira-btn { width: 100%; padding: 16px; border-radius: 10px; font-size: 1.2rem; font-weight: 900; letter-spacing: 0.1em; transition: all 0.2s; }
+.dado-chiudi-btn { width: 100%; padding: 14px; background: #111; border: 1px solid #333; border-radius: 10px; color: #777; font-size: 1rem; font-weight: 700; }
+</style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState } = React;
+<div class="grid-bg"></div>
 
+<!-- CITY SELECTOR -->
+<div id="city-screen" class="screen active">
+  <div class="city-title"><span>City</span><span>Mimo</span></div>
+  <p class="city-sub">Il gioco dei mimi sui trasporti pubblici</p>
+  <div class="city-list">
+    <p>Scegli la citta</p>
+    <button class="city-btn" style="--c:#e2001a" onclick="selectCity('MILANO')">
+      <div style="display:flex;align-items:center"><div class="dot"></div><div class="info"><strong>Milano</strong><small>Metropolitana &middot; MiMMo</small></div></div>
+      <span class="arrow">&rsaquo;</span>
+    </button>
+    <button class="city-btn" style="--c:#008a32" onclick="selectCity('BOLOGNA')">
+      <div style="display:flex;align-items:center"><div class="dot"></div><div class="info"><strong>Bologna</strong><small>Tram &middot; StramBO</small></div></div>
+      <span class="arrow">&rsaquo;</span>
+    </button>
+    <button class="city-btn" style="--c:#e07000" onclick="selectCity('ROMA')">
+      <div style="display:flex;align-items:center"><div class="dot"></div><div class="info"><strong>Roma</strong><small>Metropolitana &middot; MetroRM</small></div></div>
+      <span class="arrow">&rsaquo;</span>
+    </button>
+    <button class="city-btn" disabled style="--c:#888">
+      <div style="display:flex;align-items:center"><div class="dot" style="background:#333"></div><div class="info"><strong style="color:#444">Firenze</strong><small>Tram</small></div></div>
+      <span class="arrow" style="color:#222">presto</span>
+    </button>
+    <button class="city-btn" disabled style="--c:#888">
+      <div style="display:flex;align-items:center"><div class="dot" style="background:#333"></div><div class="info"><strong style="color:#444">Napoli</strong><small>Metropolitana</small></div></div>
+      <span class="arrow" style="color:#222">presto</span>
+    </button>
+  </div>
+</div>
 
-const DADO_DOTS = {
-  1:[[40,40]],2:[[24,24],[56,56]],3:[[22,22],[40,40],[58,58]],
-  4:[[24,24],[56,24],[24,56],[56,56]],5:[[24,24],[56,24],[40,40],[24,56],[56,56]],
-  6:[[24,20],[56,20],[24,40],[56,40],[24,60],[56,60]],
+<!-- GAME SCREEN -->
+<div id="game-screen" class="screen">
+  <div class="game-header">
+    <button class="back-btn" onclick="backToCity()">&larr; citt&agrave;</button>
+    <div class="game-title-wrap">
+      <span id="game-title" class="game-title"></span>
+      <span id="game-sub" class="game-sub"></span>
+    </div>
+    <div class="spacer60"></div>
+  </div>
+  <div id="filters" class="filters"></div>
+  <div id="card" class="card">
+    <div id="passo-ind" class="passo-indicator" style="display:none">
+      <div class="passo-bar" id="pb0"></div>
+      <div class="passo-bar" id="pb1"></div>
+      <span class="passo-label" id="passo-lbl"></span>
+    </div>
+    <div id="fermata-area" class="fermata-area">
+      <div class="placeholder">&mdash; premi il tasto per sorteggiare &mdash;</div>
+    </div>
+    <div id="counter" class="counter"></div>
+    <div id="actions" class="actions"></div>
+    <div id="sec-btns" class="sec-btns"></div>
+  </div>
+  <div id="storia-wrap" class="storia-wrap" style="display:none">
+    <p class="storia-title">FERMATE MIMATE</p>
+    <div id="storia-list"></div>
+  </div>
+</div>
+
+<!-- DADO FISSO -->
+<button id="dado-btn" onclick="openDado()">&#9856;</button>
+
+<!-- MODALE DADO -->
+<div id="dado-modal" onclick="closeDado()">
+  <div class="dado-panel" onclick="event.stopPropagation()">
+    <p class="dado-label">TIRA IL DADO PER SPOSTARTI</p>
+    <div id="dado-svg-wrap" class="dado-svg-wrap">
+      <svg id="dado-svg" width="100" height="100" viewBox="0 0 80 80">
+        <rect x="4" y="4" width="72" height="72" rx="14" ry="14" id="dado-rect" fill="#2a2a2a" stroke="#555" stroke-width="2"/>
+        <g id="dado-dots"></g>
+      </svg>
+    </div>
+    <div id="dado-result-area"></div>
+  </div>
+</div>
+
+<script>
+// ── DATI ──────────────────────────────────────────────────────────────────────
+var M1 = ["Sesto 1\u00b0 Maggio FS","Sesto Marelli","Sesto Rond\u00f2","Villa S. Giovanni","Precotto","Turro","Gorla","Pasteur","Rovereto","Loreto","Lima","Porta Venezia","Palestro","San Babila","Duomo","Cordusio","Cairoli","Cadorna FN","Conciliazione","Pagano","Wagner","De Angeli","Gambara","Bande Nere","Primaticcio","Inganni","Bisceglie","San Leonardo","Uruguay","Bonola","Lampugnano","QT8","Amendola","Lotto","Molino Dorino","Pero","Rho Fieramilano","Buonarroti"];
+var M2 = ["Gessate","Cascina Antonietta","Villa Pompea","Villa Fiorita","Bussero","Cassina de' Pecchi","Cernusco sul Naviglio","Vimodrone","Cascina Burrona","Cascina Gobba","Cologno Nord","Cologno Centro","Cologno Sud","Crescenzago","Cimiano","Udine","Lambrate FS","Piola","Loreto","Caiazzo","Centrale FS","Gioia","Garibaldi FS","Moscova","Lanza","Cadorna FN","Sant'Ambrogio","S. Agostino","Porta Genova FS","Romolo","Famagosta","Assago Milanofiori Nord","Assago Milanofiori Forum","Abbiategrasso"];
+var M3 = ["Comasina","Affori FN","Affori Centro","Dergano","Maciachini","Zara","Sondrio","Centrale FS","Repubblica","Turati","Montenapoleone","Duomo","Missori","Crocetta","Porta Romana","Lodi T.I.B.B.","Brenta","Corvetto","Porto di Mare","Rogoredo FS","San Donato"];
+var M4 = ["Linate Aeroporto","Repetti","Forlanini FS","Argonne","Susa","Dateo","Tricolore","San Babila","Sforza Policlinico","Santa Sofia","Vetra","De Amicis","Sant'Ambrogio","Coni Zugna","California","Bolivar","Tolstoj","Frattini","Gelsomini","Segneri","San Cristoforo FS"];
+var M5 = ["Bignami","Tonale","Bicocca","Ca' Granda","Istria","Marche","Zara","Isola","Garibaldi FS","Monumentale","Cenisio","Gerusalemme","Domodossola FN","Tre Torri","Portello","Lotto","Segesta","San Siro Ippodromo","San Siro Stadio"];
+var BR = ["Emilio Lepido","Villaggio Ina","Ducati","Manuzio","Stazione Borgo Panigale-Teatri di Vita","Triumvirato-Fabbri 1905","Pontelungo-MAST","Santa Viola-Opificio Golinelli","Prati di Caprara","Ospedale Maggiore","Saffi","Porta San Felice","Paladozza-San Felice","Paladozza-Riva Reno","Canale di Reno-Lame","Ugo Bassi","Piazza Maggiore-San Pietro","Indipendenza-8 Agosto","Zucca-Museo Ustica","Stalingrado","Aldo Moro-Regione-Fiera","Viale della Fiera-Liceo Copernico","Michelino-Fiera Nord","Repubblica","Piazza Spadolini","San Donato","San Donnino-Casalone","Villaggio S. Giorgio","Pirandello","Pilastro-Futura","Sighinolfi","Facolt\u00e0 di Agraria","Stazione Centrale","Giacomo Matteotti-Stazione AV","Piazza dell'Unit\u00e0"];
+var BV = ["Stazione Centrale","Giacomo Matteotti-Stazione AV","Piazza dell'Unit\u00e0","Mille","Ca' dei Fiori","Ippodromo","Aldini Valeriani","Caserme Rosse","Croce Coperta","Pinardi","Don Fiammelli","Lipparini-Ca' Bura","Bentini-Villa Torchi","Gorki-Teatro Centofiori","Sant'Anna-Byron","Shakespeare","Stazione Corticella"];
+
+var RA = ["Battistini","Cornelia","Baldo degli Ubaldi","Valle Aurelia","Cipro","Ottaviano","Lepanto","Flaminio","Spagna","Barberini","Repubblica","Termini","Vittorio Emanuele","Manzoni","San Giovanni","Re di Roma","Ponte Lungo","Furio Camillo","Colli Albani","Arco di Travertino","Porta Furba","Numidio Quadrato","Lucio Sestio","Giulio Agricola","Subaugusta","Cinecittà","Anagnina"];
+var RB = ["Laurentina","EUR Fermi","EUR Palasport","EUR Magliana","Marconi","Basilica San Paolo","Garbatella","Ostiense","Piramide","Circo Massimo","Colosseo","Cavour","Termini","Castro Pretorio","Policlinico","Bologna","Pietralata","Ponte Mammolo","Santa Maria del Soccorso","Case Rosse","Rebibbia"];
+var RB1 = ["Bologna","Libia","Filippo Neri","Ionio","Conca d'Oro","Jonio"];
+var RC = ["Pantano","Borghesiana","Tor Vergata","Torre Angela","Torre Maura","Centocelle","Mirti","Gardenie","Lodi","Pigneto","San Giovanni"];
+
+var CITTA = {
+  MILANO: { nome:"Milano", sottotitolo:"Metropolitana", appNome:"MiMMo", colore:"#e2001a",
+    linee: { M1:{c:"#e2001a",n:"M1 Rossa",s:M1}, M2:{c:"#008a32",n:"M2 Verde",s:M2}, M3:{c:"#f7a800",n:"M3 Gialla",s:M3}, M4:{c:"#005b9a",n:"M4 Blu",s:M4}, M5:{c:"#82368c",n:"M5 Lilla",s:M5} }},
+  BOLOGNA: { nome:"Bologna", sottotitolo:"Tram", appNome:"StramBO", colore:"#008a32",
+    linee: { ROSSA:{c:"#e2001a",n:"Linea Rossa",s:BR}, VERDE:{c:"#008a32",n:"Linea Verde",s:BV} }},
+  ROMA: { nome:"Roma", sottotitolo:"Metropolitana", appNome:"MetroRM", colore:"#e07000",
+    linee: {
+      A:{c:"#e07000",n:"Linea A",s:RA},
+      B:{c:"#005b9a",n:"Linea B",s:RB},
+      B1:{c:"#4a90d9",n:"Linea B1",s:RB1},
+      C:{c:"#008a32",n:"Linea C",s:RC}
+    }},
 };
 
-function Dado({ valore, colore }) {
-  return (
-    <svg width="100" height="100" viewBox="0 0 80 80">
-      <rect x="4" y="4" width="72" height="72" rx="14" ry="14" fill={colore} stroke="rgba(255,255,255,0.25)" strokeWidth="2"/>
-      {(DADO_DOTS[valore]||[]).map(([cx,cy],i) => <circle key={i} cx={cx} cy={cy} r="6" fill="white"/>)}
-    </svg>
-  );
-}
-
-const M1s = ["Sesto 1° Maggio FS","Sesto Marelli","Sesto Rondò","Villa S. Giovanni","Precotto","Turro","Gorla","Pasteur","Rovereto","Loreto","Lima","Porta Venezia","Palestro","San Babila","Duomo","Cordusio","Cairoli","Cadorna FN","Conciliazione","Pagano","Wagner","De Angeli","Gambara","Bande Nere","Primaticcio","Inganni","Bisceglie","San Leonardo","Uruguay","Bonola","Lampugnano","QT8","Amendola","Lotto","Molino Dorino","Pero","Rho Fieramilano","Buonarroti"];
-const M2s = ["Gessate","Cascina Antonietta","Villa Pompea","Villa Fiorita","Bussero","Cassina de' Pecchi","Cernusco sul Naviglio","Vimodrone","Cascina Burrona","Cascina Gobba","Cologno Nord","Cologno Centro","Cologno Sud","Crescenzago","Cimiano","Udine","Lambrate FS","Piola","Loreto","Caiazzo","Centrale FS","Gioia","Garibaldi FS","Moscova","Lanza","Cadorna FN","Sant'Ambrogio","S. Agostino","Porta Genova FS","Romolo","Famagosta","Assago Milanofiori Nord","Assago Milanofiori Forum","Abbiategrasso"];
-const M3s = ["Comasina","Affori FN","Affori Centro","Dergano","Maciachini","Zara","Sondrio","Centrale FS","Repubblica","Turati","Montenapoleone","Duomo","Missori","Crocetta","Porta Romana","Lodi T.I.B.B.","Brenta","Corvetto","Porto di Mare","Rogoredo FS","San Donato"];
-const M4s = ["Linate Aeroporto","Repetti","Forlanini FS","Argonne","Susa","Dateo","Tricolore","San Babila","Sforza Policlinico","Santa Sofia","Vetra","De Amicis","Sant'Ambrogio","Coni Zugna","California","Bolivar","Tolstoj","Frattini","Gelsomini","Segneri","San Cristoforo FS"];
-const M5s = ["Bignami","Tonale","Bicocca","Ca' Granda","Istria","Marche","Zara","Isola","Garibaldi FS","Monumentale","Cenisio","Gerusalemme","Domodossola FN","Tre Torri","Portello","Lotto","Segesta","San Siro Ippodromo","San Siro Stadio"];
-const Rs = ["Emilio Lepido","Villaggio Ina","Ducati","Manuzio","Stazione Borgo Panigale-Teatri di Vita","Triumvirato-Fabbri 1905","Pontelungo-MAST","Santa Viola-Opificio Golinelli","Prati di Caprara","Ospedale Maggiore","Saffi","Porta San Felice","Paladozza-San Felice","Paladozza-Riva Reno","Canale di Reno-Lame","Ugo Bassi","Piazza Maggiore-San Pietro","Indipendenza-8 Agosto","Zucca-Museo Ustica","Stalingrado","Aldo Moro-Regione-Fiera","Viale della Fiera-Liceo Copernico","Michelino-Fiera Nord","Repubblica","Piazza Spadolini","San Donato","San Donnino-Casalone","Villaggio S. Giorgio","Pirandello","Pilastro-Futura","Sighinolfi","Facoltà di Agraria","Stazione Centrale","Giacomo Matteotti-Stazione AV","Piazza dell'Unità"];
-const Vs = ["Stazione Centrale","Giacomo Matteotti-Stazione AV","Piazza dell'Unità","Mille","Ca' dei Fiori","Ippodromo","Aldini Valeriani","Caserme Rosse","Croce Coperta","Pinardi","Don Fiammelli","Lipparini-Ca' Bura","Bentini-Villa Torchi","Gorki-Teatro Centofiori","Sant'Anna-Byron","Shakespeare","Stazione Corticella"];
-
-const CITTA = {
-  MILANO: { nome:"Milano", sottotitolo:"Metropolitana", appNome:"MiMMo", appColore:"#e2001a", disponibile:true,
-    linee:{ M1:{colore:"#e2001a",nome:"M1 Rossa",stazioni:M1s}, M2:{colore:"#008a32",nome:"M2 Verde",stazioni:M2s}, M3:{colore:"#f7a800",nome:"M3 Gialla",stazioni:M3s}, M4:{colore:"#005b9a",nome:"M4 Blu",stazioni:M4s}, M5:{colore:"#82368c",nome:"M5 Lilla",stazioni:M5s} }},
-  BOLOGNA: { nome:"Bologna", sottotitolo:"Tram", appNome:"StramBO", appColore:"#008a32", disponibile:true,
-    linee:{ ROSSA:{colore:"#e2001a",nome:"Linea Rossa",stazioni:Rs}, VERDE:{colore:"#008a32",nome:"Linea Verde",stazioni:Vs} }},
-  ROMA:    { nome:"Roma",    sottotitolo:"Metropolitana", appNome:null, appColore:"#888", disponibile:false, linee:{} },
-  FIRENZE: { nome:"Firenze", sottotitolo:"Tram",          appNome:null, appColore:"#888", disponibile:false, linee:{} },
-  NAPOLI:  { nome:"Napoli",  sottotitolo:"Metropolitana", appNome:null, appColore:"#888", disponibile:false, linee:{} },
+// ── STATO ─────────────────────────────────────────────────────────────────────
+var stato = {
+  citta: null, filtro: "TUTTE", fermata: null,
+  usate: [], storia: [], fase: "sorteggio", passi: 0,
+  MAX_PASSI: 2
 };
 
 function buildTutte(linee) {
-  const all = [];
-  for (const [,d] of Object.entries(linee))
-    for (const s of d.stazioni)
-      if (!all.find(x=>x.nome===s)) all.push({nome:s,colore:d.colore,nomeLinea:d.nome});
+  var all = [], visti = {};
+  for (var k in linee) {
+    var l = linee[k];
+    for (var i=0; i<l.s.length; i++) {
+      if (!visti[l.s[i]]) { visti[l.s[i]]=1; all.push({nome:l.s[i],c:l.c,n:l.n}); }
+    }
+  }
   return all;
 }
 
-const BG = {minHeight:"100vh",background:"#0d0d0d",fontFamily:"Helvetica Neue,Arial,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",padding:"0 16px 40px"};
-const GRID = {position:"fixed",inset:0,zIndex:0,backgroundImage:"linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)",backgroundSize:"40px 40px"};
-
-function CitySelector({ onSelect }) {
-  return (
-    <div style={{...BG,justifyContent:"center",padding:"24px 16px"}}>
-      <div style={GRID}/>
-      <div style={{position:"relative",zIndex:1,textAlign:"center",marginBottom:40}}>
-        <div style={{fontSize:50,fontWeight:900,letterSpacing:-2,lineHeight:1,fontFamily:"Impact,Arial Black,sans-serif"}}>
-          <span style={{color:"#e2001a"}}>City</span><span style={{color:"#fff"}}>Mimo</span>
-        </div>
-        <p style={{color:"#555",fontSize:"0.7rem",marginTop:8,letterSpacing:"0.3em",fontFamily:"monospace",textTransform:"uppercase"}}>Il gioco dei mimi sui trasporti pubblici</p>
-      </div>
-      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:400}}>
-        <p style={{color:"#555",fontSize:"0.72rem",textAlign:"center",letterSpacing:"0.2em",fontFamily:"monospace",marginBottom:14,textTransform:"uppercase"}}>Scegli la città</p>
-        {Object.entries(CITTA).map(([key,city]) => (
-          <button key={key} onClick={()=>city.disponibile&&onSelect(key)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",padding:"16px 20px",marginBottom:10,background:city.disponibile?"#161616":"#0f0f0f",border:"1px solid "+(city.disponibile?"#2a2a2a":"#181818"),borderRadius:12,cursor:city.disponibile?"pointer":"not-allowed",opacity:city.disponibile?1:0.35}}>
-            <div style={{display:"flex",alignItems:"center",gap:14}}>
-              <div style={{width:10,height:10,borderRadius:"50%",background:city.disponibile?city.appColore:"#333",flexShrink:0}}/>
-              <div style={{textAlign:"left"}}>
-                <div style={{color:city.disponibile?"#fff":"#444",fontSize:"1.05rem",fontWeight:700,fontFamily:"inherit"}}>{city.nome}</div>
-                <div style={{color:"#555",fontSize:"0.68rem",fontFamily:"monospace"}}>{city.sottotitolo}{city.appNome?" · "+city.appNome:""}</div>
-              </div>
-            </div>
-            <div style={{color:city.disponibile?"#444":"#222",fontSize:"0.72rem",fontFamily:"monospace"}}>{city.disponibile?"›":"presto"}</div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+function getFiltrate() {
+  var city = CITTA[stato.citta];
+  if (stato.filtro === "TUTTE") return buildTutte(city.linee);
+  var l = city.linee[stato.filtro];
+  return l.s.map(function(s){ return {nome:s,c:l.c,n:l.n}; });
 }
 
-const MAX_PASSI = 2;
-
-function GameScreen({ cittaKey, onBack }) {
-  const city = CITTA[cittaKey];
-  const linee = city.linee;
-  const lineeKeys = Object.keys(linee);
-  const TUTTE = buildTutte(linee);
-
-  const [fermata, setFermata] = useState(null);
-  const [storia, setStoria] = useState([]);
-  const [animating, setAnimating] = useState(false);
-  const [filtroLinea, setFiltroLinea] = useState("TUTTE");
-  const [usate, setUsate] = useState([]);
-  const [fase, setFase] = useState("sorteggio");
-  const [passiUsati, setPassiUsati] = useState(0);
-  const [dadoVal, setDadoVal] = useState(1);
-  const [dadoFinale, setDadoFinale] = useState(null);
-  const [dadoRolling, setDadoRolling] = useState(false);
-
-  const pick = p => p[Math.floor(Math.random()*p.length)];
-  const getFl = () => filtroLinea==="TUTTE" ? TUTTE : linee[filtroLinea].stazioni.map(s=>({nome:s,colore:linee[filtroLinea].colore,nomeLinea:linee[filtroLinea].nome}));
-
-  const sorteggia = () => {
-    if (animating) return;
-    const fl = getFl();
-    let pool = fl.filter(f=>!usate.find(u=>u.nome===f.nome));
-    if (!pool.length) { setUsate([]); pool=fl; }
-    setAnimating(true);
-    setTimeout(()=>{ setFermata(pick(pool)); setAnimating(false); setFase(passiUsati>=MAX_PASSI?"obbligato":"scelta"); },400);
-  };
-
-  const mimo = () => {
-    setUsate(p=>[...p,fermata]); setStoria(p=>[fermata,...p].slice(0,8));
-    setPassiUsati(0); setDadoVal(1); setDadoFinale(null); setFase("dado");
-  };
-
-  const passo = () => {
-    const np=passiUsati+1; setPassiUsati(np);
-    const fl=getFl();
-    let pool=fl.filter(f=>!usate.find(u=>u.nome===f.nome)&&f.nome!==fermata.nome);
-    if (!pool.length) pool=fl.filter(f=>f.nome!==fermata.nome);
-    setAnimating(true);
-    setTimeout(()=>{ setFermata(pick(pool)); setAnimating(false); setFase(np>=MAX_PASSI?"obbligato":"scelta"); },400);
-  };
-
-  const tiraDado = () => {
-    if (dadoRolling) return;
-    setDadoRolling(true); setDadoFinale(null);
-    let n=0;
-    const iv=setInterval(()=>{
-      setDadoVal(Math.floor(Math.random()*6)+1); n++;
-      if (n>=12) { clearInterval(iv); const r=Math.floor(Math.random()*6)+1; setDadoVal(r); setDadoFinale(r); setDadoRolling(false); }
-    },80);
-  };
-
-  const nuovoTurno = () => { setFermata(null); setFase("sorteggio"); setPassiUsati(0); setDadoVal(1); setDadoFinale(null); };
-  const reset = () => { setUsate([]); setFermata(null); setStoria([]); setFase("sorteggio"); setPassiUsati(0); setDadoVal(1); setDadoFinale(null); };
-
-  const fl = getFl();
-  const usateN = fl.filter(f=>usate.find(u=>u.nome===f.nome)).length;
-  const isGiallo = fermata&&fermata.colore==="#f7a800";
-  const isDado = fase==="dado";
-
-  return (
-    <div style={BG}>
-      <div style={GRID}/>
-      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:520,display:"flex",alignItems:"center",paddingTop:20,marginBottom:6}}>
-        <button onClick={onBack} style={{background:"none",border:"1px solid #2a2a2a",borderRadius:6,color:"#555",fontFamily:"monospace",fontSize:"0.7rem",padding:"5px 10px",cursor:"pointer",flexShrink:0}}>← città</button>
-        <div style={{flex:1,textAlign:"center"}}>
-          <div style={{color:city.appColore,fontFamily:"Impact,Arial Black,sans-serif",fontSize:24,fontWeight:900,letterSpacing:-1}}>{city.appNome}</div>
-          <div style={{color:"#444",fontSize:"0.62rem",fontFamily:"monospace"}}>{city.nome} · {city.sottotitolo}</div>
-        </div>
-        <div style={{width:60}}/>
-      </div>
-
-      <div style={{position:"relative",zIndex:1,display:"flex",gap:5,flexWrap:"wrap",justifyContent:"center",margin:"10px 0 14px"}}>
-        {["TUTTE",...lineeKeys].map(k=>{
-          const active=filtroLinea===k;
-          const col=k==="TUTTE"?"#fff":linee[k].colore;
-          const tc=active?(k==="TUTTE"||col==="#f7a800"?"#000":"#fff"):"#aaa";
-          const label=k==="TUTTE"?"Tutte":(lineeKeys.length<=2?linee[k].nome:k);
-          return <button key={k} onClick={()=>{setFiltroLinea(k);setFermata(null);setFase("sorteggio");setPassiUsati(0);}} style={{padding:"5px 12px",borderRadius:4,border:"2px solid "+(active?col:"rgba(255,255,255,0.12)"),background:active?col:"transparent",color:tc,fontFamily:"inherit",fontSize:"0.78rem",fontWeight:active?700:400,cursor:"pointer"}}>{label}</button>;
-        })}
-      </div>
-
-      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:520,background:"#161616",border:"1px solid "+(fase==="obbligato"?"rgba(226,0,26,0.4)":"rgba(255,255,255,0.07)"),borderRadius:16,padding:"24px 20px",textAlign:"center",transition:"all 0.3s"}}>
-
-        {(fase==="scelta"||fase==="obbligato")&&(
-          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:16}}>
-            {[0,1].map(i=><div key={i} style={{width:32,height:5,borderRadius:3,background:i<passiUsati?"#333":"rgba(255,255,255,0.1)"}}/>)}
-            <span style={{color:fase==="obbligato"?"#e2001a":"#555",fontFamily:"monospace",fontSize:"0.63rem",marginLeft:6}}>{fase==="obbligato"?"⚠ OBBLIGATO A MIMARE":"PASSO "+passiUsati+"/"+MAX_PASSI}</span>
-          </div>
-        )}
-
-        {!isDado&&(
-          <div style={{minHeight:150,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-            {fermata?(
-              <div style={{opacity:animating?0:1,transform:animating?"scale(0.9)":"scale(1)",transition:"all 0.3s"}}>
-                <div style={{display:"inline-block",background:fermata.colore,color:isGiallo?"#000":"#fff",fontSize:"0.8rem",fontWeight:700,letterSpacing:"0.15em",padding:"4px 14px",borderRadius:4,marginBottom:14,boxShadow:"0 4px 16px "+fermata.colore+"55"}}>{fermata.nomeLinea}</div>
-                <div style={{color:"#fff",fontSize:"clamp(1.3rem,5.5vw,2.4rem)",fontWeight:900,lineHeight:1.2,padding:"0 8px",textShadow:"0 0 24px "+fermata.colore+"77"}}>{fermata.nome}</div>
-              </div>
-            ):(
-              <div style={{color:"#3a3a3a",fontSize:"0.82rem",letterSpacing:"0.2em",fontFamily:"monospace"}}>— premi il tasto per sorteggiare —</div>
-            )}
-          </div>
-        )}
-
-        {isDado&&(
-          <div style={{padding:"8px 0"}}>
-            <p style={{color:"#555",fontFamily:"monospace",fontSize:"0.65rem",letterSpacing:"0.15em",marginBottom:20,textTransform:"uppercase"}}>Tira il dado per spostarti</p>
-            <div style={{display:"flex",justifyContent:"center",marginBottom:20,transition:dadoRolling?"transform 0.08s":"transform 0.4s ease-out",transform:dadoRolling?"rotate("+(dadoVal*30)+"deg) scale(1.1)":"rotate(0deg) scale(1)"}}>
-              <Dado valore={dadoVal} colore={dadoFinale?city.appColore:"#2a2a2a"}/>
-            </div>
-            {dadoFinale?(
-              <div>
-                <p style={{color:"#fff",fontSize:"1rem",fontWeight:700,marginBottom:4}}>Hai ottenuto <span style={{color:city.appColore,fontSize:"1.8rem"}}>{dadoFinale}</span></p>
-                <p style={{color:"#555",fontFamily:"monospace",fontSize:"0.65rem",marginBottom:20}}>sposta una pedina di {dadoFinale} {dadoFinale===1?"fermata":"fermate"}</p>
-                <button onClick={nuovoTurno} style={{width:"100%",padding:"14px",background:"#1e1e1e",border:"1px solid #333",borderRadius:8,color:"#777",fontFamily:"inherit",fontSize:"0.95rem",fontWeight:700,cursor:"pointer",letterSpacing:"0.1em"}}>✓ Fatto — prossimo turno</button>
-              </div>
-            ):(
-              <button onClick={tiraDado} disabled={dadoRolling} style={{width:"100%",padding:"16px",borderRadius:8,background:dadoRolling?"#1a1a1a":"#1e1e1e",border:"2px solid "+(dadoRolling?"#2a2a2a":city.appColore),color:dadoRolling?"#444":"#fff",fontFamily:"inherit",fontSize:"1.2rem",fontWeight:900,cursor:dadoRolling?"default":"pointer",letterSpacing:"0.15em",transition:"all 0.2s"}}>{dadoRolling?"...":"🎲 Tira il dado!"}</button>
-            )}
-          </div>
-        )}
-
-        {!isDado&&<div style={{color:"#3a3a3a",fontFamily:"monospace",fontSize:"0.65rem",marginTop:10}}>{usateN>0?`${fl.length-usateN} rimaste · ${usateN} già mimate`:`${fl.length} fermate disponibili`}</div>}
-
-        {!isDado&&(
-          <div style={{marginTop:18}}>
-            {fase==="sorteggio"&&<button onClick={sorteggia} disabled={animating} style={{width:"100%",padding:"16px",background:city.appColore,border:"none",borderRadius:8,color:city.appColore==="#f7a800"?"#000":"#fff",fontFamily:"inherit",fontSize:"1.3rem",fontWeight:900,letterSpacing:"0.2em",cursor:animating?"not-allowed":"pointer",boxShadow:"0 6px 24px "+city.appColore+"44",opacity:animating?0.7:1,transition:"all 0.15s"}}>Sorteggia!</button>}
-            {(fase==="scelta"||fase==="obbligato")&&!animating&&(
-              <div style={{display:"flex",gap:10}}>
-                <button onClick={mimo} style={{flex:2,padding:"16px 10px",background:fermata?fermata.colore:city.appColore,border:"none",borderRadius:8,color:isGiallo?"#000":"#fff",fontFamily:"inherit",fontSize:"1.2rem",fontWeight:900,cursor:"pointer",boxShadow:"0 6px 20px "+(fermata?fermata.colore:city.appColore)+"44"}}>🎭 Mimo!</button>
-                {fase!=="obbligato"&&<button onClick={passo} style={{flex:1,padding:"16px 10px",background:"transparent",border:"2px solid #2a2a2a",borderRadius:8,color:"#555",fontFamily:"inherit",fontSize:"1.2rem",fontWeight:700,cursor:"pointer"}}>Passo</button>}
-              </div>
-            )}
-            {fase==="obbligato"&&!animating&&<p style={{color:"#e2001a",fontFamily:"monospace",fontSize:"0.63rem",marginTop:8}}>Hai già passato 2 volte — devi mimare questa fermata!</p>}
-          </div>
-        )}
-
-        {!isDado&&storia.length>0&&(
-          <div style={{marginTop:10,display:"flex",justifyContent:"center"}}>
-            <button onClick={reset} style={{background:"none",border:"1px solid #1e1e1e",borderRadius:6,color:"#3a3a3a",fontFamily:"monospace",fontSize:"0.62rem",padding:"5px 10px",cursor:"pointer"}}>↺ reset partita</button>
-          </div>
-        )}
-      </div>
-
-      {storia.length>0&&!isDado&&(
-        <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:520,marginTop:14}}>
-          <p style={{color:"#333",fontFamily:"monospace",fontSize:"0.6rem",letterSpacing:"0.2em",textAlign:"center",marginBottom:8,textTransform:"uppercase"}}>Fermate mimate</p>
-          {storia.map((f,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",gap:10,background:"#111",border:"1px solid #1a1a1a",borderRadius:6,padding:"7px 14px",marginBottom:4,opacity:1-i*0.1}}>
-              <div style={{width:7,height:7,borderRadius:"50%",background:f.colore,flexShrink:0}}/>
-              <span style={{color:"#3a3a3a",fontFamily:"monospace",fontSize:"0.6rem",flexShrink:0}}>{f.nomeLinea}</span>
-              <span style={{color:"#666",fontSize:"0.8rem"}}>{f.nome}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+function getDaEstrarre() {
+  var fl = getFiltrate(), usati = stato.usate;
+  return fl.filter(function(f){ return !usati.find(function(u){ return u.nome===f.nome; }); });
 }
 
-function App() {
-  const [citta, setCitta] = useState(null);
-  if (!citta) return <CitySelector onSelect={setCitta}/>;
-  return <GameScreen cittaKey={citta} onBack={()=>setCitta(null)}/>;
+function pick(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+
+// ── NAVIGAZIONE ───────────────────────────────────────────────────────────────
+function selectCity(key) {
+  stato.citta = key;
+  stato.filtro = "TUTTE"; stato.fermata = null;
+  stato.usate = []; stato.storia = []; stato.fase = "sorteggio"; stato.passi = 0;
+  document.getElementById('city-screen').classList.remove('active');
+  document.getElementById('game-screen').classList.add('active');
+  document.getElementById('dado-btn').classList.add('visible');
+  renderGame();
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+function backToCity() {
+  document.getElementById('game-screen').classList.remove('active');
+  document.getElementById('city-screen').classList.add('active');
+  document.getElementById('dado-btn').classList.remove('visible');
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function renderGame() {
+  var city = CITTA[stato.citta];
+  // Header
+  var t = document.getElementById('game-title');
+  t.textContent = city.appNome;
+  t.style.color = city.colore;
+  document.getElementById('game-sub').textContent = city.nome + ' \u00b7 ' + city.sottotitolo;
+  // Filtri
+  renderFiltri();
+  // Card
+  renderCard();
+  // Storia
+  renderStoria();
+}
+
+function renderFiltri() {
+  var city = CITTA[stato.citta];
+  var lineeKeys = Object.keys(city.linee);
+  var keys = ["TUTTE"].concat(lineeKeys);
+  var html = '';
+  keys.forEach(function(k) {
+    var active = stato.filtro === k;
+    var col = k === "TUTTE" ? "#fff" : city.linee[k].c;
+    var tc = active ? (k==="TUTTE" || col==="#f7a800" ? "#000" : "#fff") : "#aaa";
+    var label = k === "TUTTE" ? "Tutte" : (lineeKeys.length <= 2 ? city.linee[k].n : k);
+    var border = active ? col : "rgba(255,255,255,0.12)";
+    var bg = active ? col : "transparent";
+    html += '<button class="filter-btn'+(active?' active':'')+'" '+
+      'style="border-color:'+border+';background:'+bg+';color:'+tc+'" '+
+      'onclick="setFiltro(\''+k+'\')">' + label + '</button>';
+  });
+  document.getElementById('filters').innerHTML = html;
+}
+
+function setFiltro(k) {
+  stato.filtro = k; stato.fermata = null; stato.fase = "sorteggio"; stato.passi = 0;
+  renderCard(); renderFiltri();
+}
+
+function renderCard() {
+  var city = CITTA[stato.citta];
+  var fl = getFiltrate();
+  var usateN = fl.filter(function(f){ return stato.usate.find(function(u){return u.nome===f.nome;}); }).length;
+  var rimaste = fl.length - usateN;
+  // Counter
+  document.getElementById('counter').textContent = usateN > 0
+    ? rimaste + ' rimaste \u00b7 ' + usateN + ' gi\u00e0 mimate'
+    : fl.length + ' fermate disponibili';
+  // Card border
+  var card = document.getElementById('card');
+  card.className = 'card' + (stato.fase === 'obbligato' ? ' obbligato' : '');
+  if (stato.fermata) card.style.boxShadow = '0 0 60px ' + stato.fermata.c + '22';
+  else card.style.boxShadow = '0 8px 40px rgba(0,0,0,0.6)';
+  // Passo indicator
+  var pi = document.getElementById('passo-ind');
+  if (stato.fase === 'scelta' || stato.fase === 'obbligato') {
+    pi.style.display = 'flex';
+    document.getElementById('pb0').className = 'passo-bar' + (stato.passi > 0 ? ' used' : '');
+    document.getElementById('pb1').className = 'passo-bar' + (stato.passi > 1 ? ' used' : '');
+    var lbl = document.getElementById('passo-lbl');
+    lbl.className = 'passo-label' + (stato.fase==='obbligato' ? ' obbl' : '');
+    lbl.textContent = stato.fase==='obbligato' ? '! OBBLIGATO A MIMARE' : 'PASSO '+stato.passi+'/'+stato.MAX_PASSI;
+  } else {
+    pi.style.display = 'none';
+  }
+  // Fermata
+  var fa = document.getElementById('fermata-area');
+  if (stato.fermata) {
+    var isGiallo = stato.fermata.c === '#f7a800';
+    fa.innerHTML = '<div class="linea-badge" style="background:'+stato.fermata.c+';color:'+(isGiallo?'#000':'#fff')+'">'+stato.fermata.n+'</div>'
+      + '<div class="fermata-nome" style="text-shadow:0 0 28px '+stato.fermata.c+'88">'+stato.fermata.nome+'</div>';
+  } else {
+    fa.innerHTML = '<div class="placeholder">&mdash; premi il tasto per sorteggiare &mdash;</div>';
+  }
+  // Actions
+  renderActions();
+}
+
+function renderActions() {
+  var city = CITTA[stato.citta];
+  var act = document.getElementById('actions');
+  var sec = document.getElementById('sec-btns');
+  if (stato.fase === 'sorteggio') {
+    var isGiallo = city.colore === '#f7a800';
+    act.innerHTML = '<button class="sort-btn" style="background:'+city.colore+';color:'+(isGiallo?'#000':'#fff')+';box-shadow:0 6px 28px '+city.colore+'55" onclick="sorteggia()">Sorteggia!</button>';
+    sec.innerHTML = stato.storia.length > 0 ? '<button class="sec-btn" onclick="reset()">&#x21BA; reset partita</button>' : '';
+  } else if (stato.fase === 'scelta' || stato.fase === 'obbligato') {
+    var f = stato.fermata;
+    var isGiallo2 = f && f.c === '#f7a800';
+    var colF = f ? f.c : city.colore;
+    var mimoHtml = '<button class="mimo-btn" style="background:'+colF+';color:'+(isGiallo2?'#000':'#fff')+';box-shadow:0 6px 22px '+colF+'55" onclick="mimo()">Mimo!</button>';
+    var passoHtml = stato.fase !== 'obbligato' ? '<button class="passo-btn" onclick="passo()">Passo</button>' : '';
+    act.innerHTML = '<div class="mimo-row">'+mimoHtml+passoHtml+'</div>'
+      + (stato.fase==='obbligato' ? '<p class="obbl-msg">Hai gia passato 2 volte &mdash; devi mimare questa fermata!</p>' : '');
+    sec.innerHTML = '<button class="sec-btn" onclick="nuovoTurno()">&#x21A9; nuovo turno</button>'
+      + (stato.storia.length>0 ? '<button class="sec-btn" onclick="reset()">&#x21BA; reset partita</button>' : '');
+  }
+}
+
+function renderStoria() {
+  var sw = document.getElementById('storia-wrap');
+  var sl = document.getElementById('storia-list');
+  if (stato.storia.length === 0) { sw.style.display='none'; return; }
+  sw.style.display = 'block';
+  sl.innerHTML = stato.storia.map(function(f,i){
+    return '<div class="storia-item" style="opacity:'+(1-i*0.1)+'">'
+      +'<div class="storia-dot" style="background:'+f.c+'"></div>'
+      +'<span class="storia-linea">'+f.n+'</span>'
+      +'<span class="storia-nome">'+f.nome+'</span></div>';
+  }).join('');
+}
+
+// ── AZIONI GIOCO ──────────────────────────────────────────────────────────────
+function sorteggia() {
+  var da = getDaEstrarre();
+  var pool = da.length ? da : getFiltrate();
+  if (!da.length) stato.usate = [];
+  var fa = document.getElementById('fermata-area');
+  fa.classList.add('anim');
+  setTimeout(function(){
+    stato.fermata = pick(pool);
+    fa.classList.remove('anim');
+    stato.fase = stato.passi >= stato.MAX_PASSI ? 'obbligato' : 'scelta';
+    renderCard();
+  }, 300);
+}
+
+function mimo() {
+  stato.usate.push(stato.fermata);
+  stato.storia.unshift(stato.fermata);
+  if (stato.storia.length > 8) stato.storia.pop();
+  stato.passi = 0; stato.fermata = null; stato.fase = 'sorteggio';
+  renderCard(); renderStoria();
+}
+
+function passo() {
+  stato.passi++;
+  var pool = getDaEstrarre().filter(function(f){ return f.nome !== stato.fermata.nome; });
+  if (!pool.length) pool = getFiltrate();
+  var fa = document.getElementById('fermata-area');
+  fa.classList.add('anim');
+  setTimeout(function(){
+    stato.fermata = pick(pool);
+    fa.classList.remove('anim');
+    stato.fase = stato.passi >= stato.MAX_PASSI ? 'obbligato' : 'scelta';
+    renderCard();
+  }, 300);
+}
+
+function nuovoTurno() { stato.fermata=null; stato.fase='sorteggio'; stato.passi=0; renderCard(); }
+function reset() { stato.usate=[]; stato.fermata=null; stato.storia=[]; stato.fase='sorteggio'; stato.passi=0; renderCard(); renderStoria(); }
+
+// ── DADO ──────────────────────────────────────────────────────────────────────
+var DOTS = {
+  1:[[40,40]],2:[[24,24],[56,56]],3:[[22,22],[40,40],[58,58]],
+  4:[[24,24],[56,24],[24,56],[56,56]],5:[[24,24],[56,24],[40,40],[24,56],[56,56]],
+  6:[[24,20],[56,20],[24,40],[56,40],[24,60],[56,60]]
+};
+var dadoInterval = null;
+var dadoFaccia = 1;
+var dadoRis = null;
+var dadoSpin = false;
+
+function drawDado(faccia, colore) {
+  var rect = document.getElementById('dado-rect');
+  rect.setAttribute('fill', colore || '#2a2a2a');
+  rect.setAttribute('stroke', colore ? 'rgba(255,255,255,0.3)' : '#555');
+  var g = document.getElementById('dado-dots');
+  var dots = DOTS[faccia] || [];
+  g.innerHTML = dots.map(function(d){ return '<circle cx="'+d[0]+'" cy="'+d[1]+'" r="6" fill="white"/>'; }).join('');
+}
+
+function openDado() {
+  dadoRis = null; dadoSpin = false; dadoFaccia = 1;
+  drawDado(1);
+  document.getElementById('dado-result-area').innerHTML =
+    '<button class="dado-tira-btn" id="tira-btn" onclick="tiraDado()" style="background:#222;border:2px solid '+(CITTA[stato.citta]?CITTA[stato.citta].colore:'#e2001a')+';color:#fff">Tira il dado!</button>';
+  document.getElementById('dado-modal').classList.add('open');
+}
+
+function closeDado() {
+  if (dadoInterval) { clearInterval(dadoInterval); dadoInterval=null; }
+  document.getElementById('dado-modal').classList.remove('open');
+}
+
+function tiraDado() {
+  if (dadoSpin) return;
+  dadoSpin = true; dadoRis = null;
+  var btn = document.getElementById('tira-btn');
+  if (btn) btn.textContent = '...';
+  var wrap = document.getElementById('dado-svg-wrap');
+  wrap.classList.add('spinning');
+  var n = 0;
+  dadoInterval = setInterval(function(){
+    dadoFaccia = Math.floor(Math.random()*6)+1;
+    drawDado(dadoFaccia);
+    n++;
+    if (n >= 14) {
+      clearInterval(dadoInterval); dadoInterval = null;
+      dadoSpin = false;
+      wrap.classList.remove('spinning');
+      var r = Math.floor(Math.random()*6)+1;
+      dadoFaccia = r; dadoRis = r;
+      var cityColore = stato.citta ? CITTA[stato.citta].colore : '#e2001a';
+      drawDado(r, cityColore);
+      document.getElementById('dado-result-area').innerHTML =
+        '<p class="dado-result">Hai ottenuto <span style="color:'+cityColore+'">'+r+'</span></p>'
+        +'<p class="dado-result-sub">sposta una pedina di '+r+(r===1?' fermata':' fermate')+'</p>'
+        +'<button class="dado-chiudi-btn" onclick="closeDado()">Chiudi</button>';
+    }
+  }, 80);
+}
 </script>
 </body>
 </html>
